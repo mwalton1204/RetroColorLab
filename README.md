@@ -4,7 +4,7 @@ A browser-based toolkit for retro palette workflows. Convert color values betwee
 
 Built for retro game developers, pixel artists, and ROM hackers working with constrained-color systems like Game Boy Color, GBA, NES, and SNES.
 
-**[Live demo →]()**
+**[Live demo →](https://mwalton1204.github.io/RetroColorLab/)**
 
 ---
 
