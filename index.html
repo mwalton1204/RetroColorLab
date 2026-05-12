@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RetroColorLab</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0,0" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="#top" aria-label="RetroColorLab home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-title">
+          <strong>RetroColorLab</strong>
+          <span>Retro palette tools</span>
+        </span>
+      </a>
+      <nav class="nav" aria-label="Primary navigation">
+        <a href="#converter">Converter</a>
+        <a href="#sprite">Sprite Recolor</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top" class="app">
+    <section class="hero">
+      <div class="hero-card">
+        <span class="eyebrow">Retro color tools, in the browser</span>
+        <h1>Convert palette formats. Recolor sprites.</h1>
+        <p class="subtitle">Paste color values to convert between RGB555, RGB888, HEX, and more. Upload a sprite to detect its colors automatically — then swap, name, and export palette files for your editor.</p>
+      </div>
+    </section>
+
+    <section id="converter" class="panel">
+      <div class="section-head">
+        <div>
+          <h2>Palette converter</h2>
+          <p class="section-copy">Convert a single color between RGB555, RGB888, RGB565, RGB444, and HEX. Use the color picker or type a value directly.</p>
+        </div>
+      </div>
+
+      <div class="converter-card">
+        <div class="field-stack">
+          <div class="converter-io-row">
+            <div>
+              <label for="input">Input</label>
+              <div class="input-picker-wrap">
+                <textarea id="input" spellcheck="false" placeholder="EX: RGB 099, 181, 206"></textarea>
+                <div id="colorPicker" class="pickr-anchor input-picker-inline" aria-label="Pick color"></div>
+              </div>
+            </div>
+
+            <div class="converter-arrow" aria-hidden="true">→</div>
+
+            <div>
+              <label for="convertedOutput">Output</label>
+              <div class="input-picker-wrap">
+                <textarea id="convertedOutput" spellcheck="false" readonly></textarea>
+                <button id="copyRgbBtn" class="output-copy-btn" type="button" aria-label="Copy output" title="Copy output">
+                  <span class="material-symbols-rounded">content_copy</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <p id="error" class="error" role="alert"></p>
+
+          <div class="controls converter-bottom-controls">
+            <button id="clearPaletteBtn" class="secondary" type="button">Clear</button>
+
+            <div class="converter-selects" aria-label="Conversion formats">
+              <div class="format-menu" data-format-menu="input">
+                <span class="converter-select-label">In</span>
+                <button id="inputFormatButton" class="format-menu-button" type="button" aria-haspopup="listbox" aria-expanded="false">RGB888</button>
+                <div id="inputFormatMenu" class="format-menu-list" role="listbox" aria-label="Input format">
+                  <button type="button" role="option" data-value="RGB888" class="active">RGB888</button>
+                  <button type="button" role="option" data-value="RGB555">RGB555</button>
+                  <button type="button" role="option" data-value="RGB565">RGB565</button>
+                  <button type="button" role="option" data-value="RGB444">RGB444</button>
+                  <button type="button" role="option" data-value="HEX">HEX</button>
+                </div>
+              </div>
+
+              <div class="format-menu" data-format-menu="output">
+                <span class="converter-select-label">Out</span>
+                <button id="outputFormatButton" class="format-menu-button" type="button" aria-haspopup="listbox" aria-expanded="false">RGB555</button>
+                <div id="outputFormatMenu" class="format-menu-list" role="listbox" aria-label="Output format">
+                  <button type="button" role="option" data-value="RGB555" class="active">RGB555</button>
+                  <button type="button" role="option" data-value="RGB888">RGB888</button>
+                  <button type="button" role="option" data-value="RGB565">RGB565</button>
+                  <button type="button" role="option" data-value="RGB444">RGB444</button>
+                  <button type="button" role="option" data-value="HEX">HEX</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <p id="paletteToast" class="toast" aria-live="polite"></p>
+        </div>
+      </div>
+    </section>
+
+    <section id="sprite" class="panel">
+      <div class="section-head sprite-head">
+        <div>
+          <h2>Sprite recolor</h2>
+          <p class="section-copy">Upload a sprite image. Colors are detected automatically — swap them with the pickers, then export palette files in JASC, GIMP, or plain-text formats.</p>
+        </div>
+      </div>
+
+      <div class="sprite-workbench">
+        <div class="sprite-left-stack">
+          <aside class="workspace-card sprite-info-card">
+            <div class="upload-head">
+              <h3>Upload</h3>
+              <button id="clearSpriteBtn" class="upload-clear-btn" type="button" aria-label="Clear image" title="Clear image">
+                <span class="material-symbols-rounded">delete</span>
+              </button>
+            </div>
+
+            <div class="sprite-controls">
+              <label class="sr-only" for="spriteUpload">Upload sprite</label>
+              <input id="spriteUpload" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+            </div>
+
+            <div class="sprite-format-section-inline">
+              <span class="sprite-format-label">Palette Format:</span>
+              <div class="format-menu sprite-format-menu" data-format-menu="palette-file">
+                <button id="paletteFileFormatButton" class="format-menu-button swap-format-inline" type="button" aria-haspopup="listbox" aria-expanded="false">JASC .pal</button>
+                <div id="paletteFileFormatMenu" class="format-menu-list" role="listbox" aria-label="Palette file format">
+                  <button type="button" role="option" data-value="palettes/jasc.pal" class="active">JASC .pal</button>
+                  <button type="button" role="option" data-value="palettes/gimp.gpl">GIMP .gpl</button>
+                  <button type="button" role="option" data-value="palettes/rgb888.txt">RGB888 .txt</button>
+                  <button type="button" role="option" data-value="palettes/rgb555.txt">RGB555 .txt</button>
+                  <button type="button" role="option" data-value="palettes/rgb565.txt">RGB565 .txt</button>
+                  <button type="button" role="option" data-value="palettes/rgb444.txt">RGB444 .txt</button>
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          <div class="swap-card">
+            <div class="swap-head">
+              <h3>Swap Colors</h3>
+              <button id="resetSwapColorsBtn" class="swap-reset-btn reset-all-btn" type="button" aria-label="Reset all colors" title="Reset all colors">
+                <span class="material-symbols-rounded">restart_alt</span>
+                <span>Reset All</span>
+              </button>
+            </div>
+            <div id="swapList" class="swap-list"></div>
+          </div>
+
+          <div class="palette-file-preview">
+            <div class="palette-file-head">
+              <h3>Export preview</h3>
+            </div>
+
+            <textarea id="paletteFileText" class="palette-file-text" spellcheck="false" readonly>No sprite uploaded.</textarea>
+
+            <div class="palette-file-actions">
+              <label class="palette-setting palette-setting-toggle">
+                <input id="excludeBlackWhiteToggle" type="checkbox" />
+                <span>Exclude B/W</span>
+              </label>
+
+              <div class="palette-file-button-row">
+                <button id="editPaletteFileBtn" class="preview-download-btn" type="button" aria-label="Edit palette file text" title="Edit palette file text" aria-pressed="false">
+                  <span class="material-symbols-rounded">edit</span>
+                </button>
+                <button id="downloadPaletteFileBtn" class="preview-download-btn" type="button" aria-label="Download palette file" title="Download palette file">
+                  <span class="material-symbols-rounded">download</span>
+                </button>
+                <button id="copyPaletteFileBtn" class="preview-download-btn" type="button" aria-label="Copy palette file text" title="Copy palette file text">
+                  <span class="material-symbols-rounded">content_copy</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <p id="spriteToast" class="toast" aria-live="polite"></p>
+        </div>
+
+        <div class="sprite-preview-stack">
+          <div class="preview-grid">
+            <div class="preview-panel">
+              <div class="canvas-caption">
+                <label>Original</label><span id="originalSize" class="canvas-size"></span>
+              </div>
+              <div class="canvas-box">
+                <div id="originalEmpty" class="empty-state">Upload a sprite to get started.</div>
+                <canvas id="originalCanvas"></canvas>
+              </div>
+            </div>
+
+            <div class="preview-panel">
+              <div class="canvas-caption">
+                <label>Recolored</label>
+                <div class="preview-actions">
+                  <span id="previewSize" class="canvas-size"></span>
+                  <button id="downloadSpriteBtn" class="preview-download-btn" type="button" aria-label="Download recolored PNG" title="Download recolored PNG">
+                    <span class="material-symbols-rounded">download</span>
+                  </button>
+                  <button id="downloadIndexedBtn" class="preview-download-btn" type="button" aria-label="Download indexed package" title="Download indexed PNG + palette files">
+                    <span class="material-symbols-rounded">inventory_2</span>
+                  </button>
+                </div>
+              </div>
+              <div class="canvas-box">
+                <div id="previewEmpty" class="empty-state">Recolored image appears here.</div>
+                <canvas id="previewCanvas"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="zoom-controls" aria-label="Sprite magnification">
+            <button class="zoom-btn active" type="button" data-zoom="1">1×</button>
+            <button class="zoom-btn" type="button" data-zoom="2">2×</button>
+            <button class="zoom-btn" type="button" data-zoom="4">4×</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <p class="footer-note">RetroColorLab runs entirely in your browser. Uploaded images are never sent anywhere.</p>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="js/color-formats.js"></script>
+  <script src="js/ui-utils.js"></script>
+  <script src="js/pickr-enhancements.js"></script>
+  <script src="js/palette-export.js"></script>
+  <script src="js/format-menus.js"></script>
+  <script src="js/converter.js"></script>
+  <script src="js/sprite-recolorer.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
