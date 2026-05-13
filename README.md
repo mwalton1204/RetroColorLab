@@ -6,7 +6,7 @@ Built for retro game developers, pixel artists, and ROM hackers working with con
 
 **[Live demo →](https://mwalton1204.github.io/RetroColorLab/)**
 
-<img src="assets/screenshot.png" alt="RetroColorLab screenshot" width="800" />
+<img src="assets/screenshot.png" alt="RetroColorLab screenshot" width="550" />
 
 ---
 
