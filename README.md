@@ -6,6 +6,8 @@ Built for retro game developers, pixel artists, and ROM hackers working with con
 
 **[Live demo →](https://mwalton1204.github.io/RetroColorLab/)**
 
+![RetroColorLab screenshot](assets/screenshot.png)
+
 ---
 
 ## Features
