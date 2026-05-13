@@ -85,3 +85,9 @@ Loaded via CDN — no npm install required:
 | [Pickr](https://github.com/Simonwep/pickr) | Color picker UI |
 | [JSZip](https://stuk.github.io/jszip/) | Client-side ZIP generation |
 | [Material Symbols](https://fonts.google.com/icons) | Icon font |
+
+---
+
+## License
+
+MIT © 2026 Michael Walton

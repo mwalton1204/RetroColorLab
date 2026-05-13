@@ -501,6 +501,7 @@ button:active { transform: translateY(0); }
 .editable-color .pickr, .editable-color .pickr-anchor, .editable-color .pickr .pcr-button { width: 30px !important; height: 30px !important; }
 
 .footer-note { color: var(--muted); font-size: 0.9rem; line-height: 1.55; text-align: center; margin: 28px 0 0; }
+.footer-note + .footer-note { margin-top: 2px; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
 @media (max-width: 900px) {
