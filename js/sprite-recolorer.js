@@ -37,9 +37,45 @@ function initSpriteRecolorer() {
   let palettePreviewApplyTimer = 0;
   let isPaletteFileEditable = false;
   let spriteZoom = 1;
+  let hoveredMappingId = null;
+  let pinnedMappingId = null;
 
   function includeBlackWhite() {
     return !excludeBlackWhiteToggle.checked;
+  }
+
+  function getPixelMappingId(event) {
+    if (!originalImageData) return null;
+    const rect = originalCanvas.getBoundingClientRect();
+    const x = Math.floor((event.clientX - rect.left) * (originalImageData.width / rect.width));
+    const y = Math.floor((event.clientY - rect.top) * (originalImageData.height / rect.height));
+    if (x < 0 || y < 0 || x >= originalImageData.width || y >= originalImageData.height) return null;
+    const idx = (y * originalImageData.width + x) * 4;
+    if (originalImageData.data[idx + 3] === 0) return null;
+    const key = rgbKey(originalImageData.data[idx], originalImageData.data[idx + 1], originalImageData.data[idx + 2]);
+    return mappings.find(m => m.key === key)?.id ?? null;
+  }
+
+  function updateHighlights() {
+    swapList.querySelectorAll(".swap-row--highlighted, .swap-row--pinned").forEach(el => {
+      el.classList.remove("swap-row--highlighted", "swap-row--pinned");
+    });
+
+    if (pinnedMappingId) {
+      const row = swapList.querySelector(`.swap-row[data-mapping-id="${pinnedMappingId}"]`);
+      if (row) {
+        row.classList.add("swap-row--pinned");
+        row.scrollIntoView({ block: "nearest", behavior: "instant" });
+      }
+    }
+
+    if (hoveredMappingId && hoveredMappingId !== pinnedMappingId) {
+      const row = swapList.querySelector(`.swap-row[data-mapping-id="${hoveredMappingId}"]`);
+      if (row) {
+        row.classList.add("swap-row--highlighted");
+        if (!pinnedMappingId) row.scrollIntoView({ block: "nearest", behavior: "instant" });
+      }
+    }
   }
 
   function buildMappings(colors) {
@@ -127,6 +163,7 @@ function initSpriteRecolorer() {
     });
 
     updatePaletteFilePreview();
+    updateHighlights();
   }
 
   function applySpriteZoom() {
@@ -201,9 +238,12 @@ function initSpriteRecolorer() {
         spriteColors = Array.from(colorMap.values()).sort((a, b) => b.count - a.count);
         mappings = buildMappings(spriteColors);
         names = mappings.map(mapping => getDefaultColorName(mapping, mappings));
+        hoveredMappingId = null;
+        pinnedMappingId = null;
 
         originalEmpty.style.display = "none";
         originalCanvas.style.display = "block";
+        originalCanvas.classList.add("is-picking");
         originalSize.textContent = `${img.width}×${img.height}`;
         applySpriteZoom();
         setPaletteFileEditable(false);
@@ -229,7 +269,10 @@ function initSpriteRecolorer() {
     previewCanvas.width = 0;
     previewCanvas.height = 0;
 
+    hoveredMappingId = null;
+    pinnedMappingId = null;
     originalCanvas.style.display = "none";
+    originalCanvas.classList.remove("is-picking");
     previewCanvas.style.display = "none";
     originalEmpty.style.display = "grid";
     previewEmpty.style.display = "grid";
@@ -452,6 +495,31 @@ function initSpriteRecolorer() {
     if (!isPaletteFileEditable) return;
     window.clearTimeout(palettePreviewApplyTimer);
     palettePreviewApplyTimer = window.setTimeout(applyPalettePreviewText, 250);
+  });
+
+  originalCanvas.addEventListener("mousemove", event => {
+    const id = getPixelMappingId(event);
+    if (id === hoveredMappingId) return;
+    hoveredMappingId = id;
+    updateHighlights();
+  });
+
+  originalCanvas.addEventListener("mouseleave", () => {
+    hoveredMappingId = null;
+    updateHighlights();
+  });
+
+  originalCanvas.addEventListener("click", event => {
+    const id = getPixelMappingId(event);
+    pinnedMappingId = (id && id !== pinnedMappingId) ? id : null;
+    updateHighlights();
+  });
+
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && pinnedMappingId) {
+      pinnedMappingId = null;
+      updateHighlights();
+    }
   });
 
   originalCanvas.style.display = "none";

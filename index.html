@@ -187,7 +187,14 @@
           <div class="preview-grid">
             <div class="preview-panel">
               <div class="canvas-caption">
-                <label>Original</label><span id="originalSize" class="canvas-size"></span>
+                <span class="caption-group">
+                  <label>Original</label>
+                  <span class="info-tip">
+                    <span class="info-tip-icon material-symbols-rounded" aria-label="Picker tool help">info</span>
+                    <span class="info-tip-content">Hover to highlight &middot; Click to pin &middot; Esc to clear</span>
+                  </span>
+                </span>
+                <span id="originalSize" class="canvas-size"></span>
               </div>
               <div class="canvas-box">
                 <div id="originalEmpty" class="empty-state">Upload a sprite to get started.</div>
@@ -212,13 +219,12 @@
                 <div id="previewEmpty" class="empty-state">Recolored image appears here.</div>
                 <canvas id="previewCanvas"></canvas>
               </div>
+              <div class="zoom-controls" aria-label="Sprite magnification">
+                <button class="zoom-btn active" type="button" data-zoom="1">1×</button>
+                <button class="zoom-btn" type="button" data-zoom="2">2×</button>
+                <button class="zoom-btn" type="button" data-zoom="4">4×</button>
+              </div>
             </div>
-          </div>
-
-          <div class="zoom-controls" aria-label="Sprite magnification">
-            <button class="zoom-btn active" type="button" data-zoom="1">1×</button>
-            <button class="zoom-btn" type="button" data-zoom="2">2×</button>
-            <button class="zoom-btn" type="button" data-zoom="4">4×</button>
           </div>
         </div>
       </div>
