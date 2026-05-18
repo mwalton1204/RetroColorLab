@@ -24,6 +24,7 @@ Built for retro game developers, pixel artists, and ROM hackers working with con
 - Per-color name labels, editable inline
 - Editable palette file preview: paste values from an external source to apply them back to the sprite
 - Exclude black and white from exports with a toggle
+- Hover over the original sprite to highlight the matching swap color; click to pin the highlight, click again or press Esc to clear
 - 1×, 2×, 4× zoom for pixel-accurate inspection
 
 ### Palette Export (ZIP package)
