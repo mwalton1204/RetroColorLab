@@ -167,6 +167,9 @@
               </label>
 
               <div class="palette-file-button-row">
+                <button id="importPaletteFileBtn" class="preview-download-btn" type="button" aria-label="Import palette file" title="Import palette file (.pal, .gpl, .txt)">
+                  <span class="material-symbols-rounded">upload_file</span>
+                </button>
                 <button id="editPaletteFileBtn" class="preview-download-btn" type="button" aria-label="Edit palette file text" title="Edit palette file text" aria-pressed="false">
                   <span class="material-symbols-rounded">edit</span>
                 </button>
@@ -178,6 +181,27 @@
                 </button>
               </div>
             </div>
+          </div>
+
+          <div class="saved-palettes-card workspace-card">
+            <div class="saved-palettes-head">
+              <h3>Saved Palettes</h3>
+              <div class="saved-palettes-io-btns">
+                <button id="importPalettesBtn" class="preview-download-btn" type="button" aria-label="Import palettes from JSON backup" title="Import palettes from JSON backup">
+                  <span class="material-symbols-rounded">upload_file</span>
+                </button>
+                <button id="exportPalettesBtn" class="preview-download-btn" type="button" aria-label="Export all palettes as JSON" title="Export all palettes as JSON">
+                  <span class="material-symbols-rounded">ios_share</span>
+                </button>
+              </div>
+            </div>
+            <div class="save-palette-row">
+              <input id="savePaletteName" type="text" class="save-palette-name-input" placeholder="Palette name…" aria-label="Palette name" maxlength="64" />
+              <button id="savePaletteBtn" type="button" class="save-palette-btn">Save</button>
+            </div>
+            <div id="savedPalettesList" class="saved-palettes-list"></div>
+            <input id="importPalettesInput" type="file" accept=".json" style="display:none" aria-hidden="true" tabindex="-1" />
+            <input id="importPaletteFileInput" type="file" accept=".pal,.gpl,.txt" style="display:none" aria-hidden="true" tabindex="-1" />
           </div>
 
           <p id="spriteToast" class="toast" aria-live="polite"></p>
@@ -234,8 +258,22 @@
     <p class="footer-note">&copy; 2026 Michael Walton — MIT License</p>
   </main>
 
+  <dialog id="paletteFormatDialog" class="palette-format-dialog">
+    <p class="palette-format-dialog-label">Select the format of the imported file:</p>
+    <div id="paletteFormatDialogOptions" class="palette-format-dialog-options">
+      <button type="button" data-value="palettes/jasc.pal">JASC .pal</button>
+      <button type="button" data-value="palettes/gimp.gpl">GIMP .gpl</button>
+      <button type="button" data-value="palettes/rgb888.txt">RGB888 .txt</button>
+      <button type="button" data-value="palettes/rgb555.txt">RGB555 .txt</button>
+      <button type="button" data-value="palettes/rgb565.txt">RGB565 .txt</button>
+      <button type="button" data-value="palettes/rgb444.txt">RGB444 .txt</button>
+    </div>
+    <button id="paletteFormatDialogCancel" type="button" class="secondary palette-format-dialog-cancel">Cancel</button>
+  </dialog>
+
   <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="js/palette-storage.js"></script>
   <script src="js/color-formats.js"></script>
   <script src="js/ui-utils.js"></script>
   <script src="js/pickr-enhancements.js"></script>

@@ -24,6 +24,17 @@ function initSpriteRecolorer() {
   const downloadPaletteFileBtn = document.getElementById("downloadPaletteFileBtn");
   const editPaletteFileBtn = document.getElementById("editPaletteFileBtn");
   const excludeBlackWhiteToggle = document.getElementById("excludeBlackWhiteToggle");
+  const savedPalettesList = document.getElementById("savedPalettesList");
+  const savePaletteBtn = document.getElementById("savePaletteBtn");
+  const savePaletteName = document.getElementById("savePaletteName");
+  const exportPalettesBtn = document.getElementById("exportPalettesBtn");
+  const importPalettesBtn = document.getElementById("importPalettesBtn");
+  const importPalettesInput = document.getElementById("importPalettesInput");
+  const importPaletteFileBtn = document.getElementById("importPaletteFileBtn");
+  const importPaletteFileInput = document.getElementById("importPaletteFileInput");
+  const paletteFormatDialog = document.getElementById("paletteFormatDialog");
+  const paletteFormatDialogOptions = document.getElementById("paletteFormatDialogOptions");
+  const paletteFormatDialogCancel = document.getElementById("paletteFormatDialogCancel");
 
   const originalCtx = originalCanvas.getContext("2d", { willReadFrequently: true });
   const previewCtx = previewCanvas.getContext("2d", { willReadFrequently: true });
@@ -522,10 +533,244 @@ function initSpriteRecolorer() {
     }
   });
 
+  async function refreshSavedPalettesList() {
+    let palettes;
+    try {
+      palettes = await listPalettes();
+    } catch {
+      return;
+    }
+    savedPalettesList.innerHTML = "";
+    if (palettes.length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "saved-palettes-empty";
+      empty.textContent = "No saved palettes.";
+      savedPalettesList.appendChild(empty);
+      return;
+    }
+    palettes.forEach(palette => {
+      const row = document.createElement("div");
+      row.className = "saved-palette-row";
+      const dateStr = new Date(palette.savedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+      row.innerHTML = `
+        <div class="saved-palette-info">
+          <span class="saved-palette-name">${escapeHtml(palette.name)}</span>
+          <span class="saved-palette-meta">${palette.colorCount} color${palette.colorCount === 1 ? "" : "s"} · ${dateStr}</span>
+        </div>
+        <div class="saved-palette-actions">
+          <button class="preview-download-btn load-palette-btn" type="button" aria-label="Load palette" title="Load palette" data-palette-id="${palette.id}">
+            <span class="material-symbols-rounded">palette</span>
+          </button>
+          <button class="preview-download-btn delete-palette-btn" type="button" aria-label="Delete palette" title="Delete palette" data-palette-id="${palette.id}">
+            <span class="material-symbols-rounded">delete</span>
+          </button>
+        </div>
+      `;
+      savedPalettesList.appendChild(row);
+    });
+  }
+
+  savePaletteBtn.addEventListener("click", async () => {
+    if (!originalImageData || mappings.length === 0) {
+      showToast(spriteToast, "Upload a sprite first.");
+      return;
+    }
+    const name = savePaletteName.value.trim() || "Unnamed Palette";
+    const colors = getSortedSpriteMappings(mappings).map(mapping => {
+      const originalIndex = mappings.findIndex(item => item.id === mapping.id);
+      return {
+        replacementHex: mapping.replacementHex,
+        name: names[originalIndex] || getDefaultColorName(mapping, mappings)
+      };
+    });
+    try {
+      await savePalette(name, colors);
+      savePaletteName.value = "";
+      await refreshSavedPalettesList();
+      showToast(spriteToast, "Palette saved.");
+    } catch {
+      showToast(spriteToast, "Failed to save palette.");
+    }
+  });
+
+  savedPalettesList.addEventListener("click", async event => {
+    const loadBtn = event.target.closest(".load-palette-btn");
+    if (loadBtn) {
+      if (!originalImageData || mappings.length === 0) {
+        showToast(spriteToast, "Upload a sprite first.");
+        return;
+      }
+      const id = Number(loadBtn.dataset.paletteId);
+      try {
+        const palette = await loadPaletteById(id);
+        if (!palette) return;
+        const sortedMappings = getSortedSpriteMappings(mappings);
+        palette.colors.forEach((saved, index) => {
+          if (index >= sortedMappings.length) return;
+          const mapping = sortedMappings[index];
+          const originalIndex = mappings.findIndex(item => item.id === mapping.id);
+          mapping.replacementHex = saved.replacementHex;
+          if (saved.name) names[originalIndex] = saved.name;
+        });
+        renderSwapControls();
+        recolorSprite();
+        showToast(spriteToast, `Loaded "${palette.name}".`);
+      } catch {
+        showToast(spriteToast, "Failed to load palette.");
+      }
+      return;
+    }
+
+    const deleteBtn = event.target.closest(".delete-palette-btn");
+    if (deleteBtn) {
+      const id = Number(deleteBtn.dataset.paletteId);
+      try {
+        await deletePaletteById(id);
+        await refreshSavedPalettesList();
+        showToast(spriteToast, "Palette deleted.");
+      } catch {
+        showToast(spriteToast, "Failed to delete palette.");
+      }
+    }
+  });
+
+  exportPalettesBtn.addEventListener("click", async () => {
+    try {
+      const json = await exportPalettesJson();
+      const blob = new Blob([json], { type: "application/json" });
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = "retrocolorlab-palettes.json";
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(objectUrl);
+      showToast(spriteToast, "Palettes exported.");
+    } catch {
+      showToast(spriteToast, "Export failed.");
+    }
+  });
+
+  importPaletteFileBtn.addEventListener("click", () => {
+    if (!originalImageData || mappings.length === 0) {
+      showToast(spriteToast, "Upload a sprite first.");
+      return;
+    }
+    importPaletteFileInput.click();
+  });
+
+  function detectFormatFromContent(text) {
+    const firstLine = text.trim().split(/\r?\n/)[0].trim();
+    if (firstLine === "JASC-PAL") return "palettes/jasc.pal";
+    if (firstLine === "GIMP Palette") return "palettes/gimp.gpl";
+    return null;
+  }
+
+  function applyPaletteImport(text, format, filename) {
+    let parsedColors;
+    try {
+      parsedColors = parsePalettePreviewText(text, format);
+    } catch (err) {
+      showToast(spriteToast, err.message || "Could not parse palette file.");
+      return;
+    }
+
+    if (parsedColors.length === 0) {
+      showToast(spriteToast, "No colors found in file.");
+      return;
+    }
+
+    const sorted = getSortedSpriteMappings(mappings);
+    const hasWhiteSlot = sorted.length > 0 && sorted[0].source.hex.toUpperCase() === "#FFFFFF";
+    const hasBlackSlot = sorted.length > 0 && sorted[sorted.length - 1].source.hex.toUpperCase() === "#000000";
+    const bwCount = (hasWhiteSlot ? 1 : 0) + (hasBlackSlot ? 1 : 0);
+
+    if (!excludeBlackWhiteToggle.checked && bwCount > 0 && parsedColors.length === sorted.length - bwCount) {
+      if (hasWhiteSlot) parsedColors.unshift({ r: 255, g: 255, b: 255 });
+      if (hasBlackSlot) parsedColors.push({ r: 0, g: 0, b: 0 });
+    }
+
+    parsedColors.forEach((color, index) => {
+      if (index >= sorted.length) return;
+      const mapping = sorted[index];
+      const originalIndex = mappings.findIndex(item => item.id === mapping.id);
+      mapping.replacementHex = toHex(color.r, color.g, color.b);
+      if (color.name) names[originalIndex] = color.name;
+    });
+
+    const formatLabel = paletteFileFormatMenu.querySelector(`[data-value="${format}"]`)?.textContent || format;
+    setPaletteFileFormat(format, formatLabel);
+    renderSwapControls();
+    recolorSprite();
+    showToast(spriteToast, `Palette imported from "${filename}".`);
+  }
+
+  let pendingImportText = null;
+  let pendingImportFilename = null;
+
+  importPaletteFileInput.addEventListener("change", () => {
+    const file = importPaletteFileInput.files[0];
+    if (!file) return;
+    importPaletteFileInput.value = "";
+
+    const reader = new FileReader();
+    reader.onload = event => {
+      const text = event.target.result;
+      const format = detectFormatFromContent(text);
+      if (format) {
+        applyPaletteImport(text, format, file.name);
+      } else {
+        pendingImportText = text;
+        pendingImportFilename = file.name;
+        paletteFormatDialog.showModal();
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  paletteFormatDialogOptions.addEventListener("click", event => {
+    const btn = event.target.closest("[data-value]");
+    if (!btn) return;
+    paletteFormatDialog.close();
+    if (pendingImportText !== null) {
+      applyPaletteImport(pendingImportText, btn.dataset.value, pendingImportFilename);
+      pendingImportText = null;
+      pendingImportFilename = null;
+    }
+  });
+
+  paletteFormatDialogCancel.addEventListener("click", () => {
+    paletteFormatDialog.close();
+    pendingImportText = null;
+    pendingImportFilename = null;
+  });
+
+  importPalettesBtn.addEventListener("click", () => importPalettesInput.click());
+
+  importPalettesInput.addEventListener("change", async () => {
+    const file = importPalettesInput.files[0];
+    if (!file) return;
+    importPalettesInput.value = "";
+    const reader = new FileReader();
+    reader.onload = async event => {
+      try {
+        const count = await importPalettesJson(event.target.result);
+        await refreshSavedPalettesList();
+        showToast(spriteToast, `Imported ${count} palette${count === 1 ? "" : "s"}.`);
+      } catch {
+        showToast(spriteToast, "Import failed. Invalid JSON.");
+      }
+    };
+    reader.readAsText(file);
+  });
+
   originalCanvas.style.display = "none";
   previewCanvas.style.display = "none";
   setPaletteFileEditable(false);
   updatePaletteFilePreview();
+  refreshSavedPalettesList();
 
   return { setPaletteFileFormat };
 }

@@ -471,6 +471,35 @@ button:active { transform: translateY(0); }
 .palette-file-text::-webkit-scrollbar { display: initial; width: 8px; height: 8px; }
 .palette-file-text::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.14); border-radius: 999px; }
 
+.saved-palettes-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.saved-palettes-head h3 { margin-bottom: 0; }
+.saved-palettes-io-btns { display: flex; align-items: center; gap: 6px; }
+.save-palette-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; margin-bottom: 10px; align-items: center; }
+.save-palette-name-input {
+  width: 100%;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: rgba(6, 10, 15, 0.9);
+  color: var(--text);
+  caret-color: var(--text);
+  font: 12px/1.2 Consolas, Monaco, "Courier New", monospace;
+  outline: none;
+}
+.save-palette-name-input::placeholder { color: rgba(159, 178, 194, 0.46); font-style: italic; }
+.save-palette-name-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(127, 199, 255, 0.14); }
+.save-palette-btn { padding: 5px 14px; min-height: 34px; font-size: 0.82rem; white-space: nowrap; }
+.saved-palettes-list { display: grid; gap: 6px; max-height: 200px; overflow-y: auto; scrollbar-width: thin; padding-right: 2px; }
+.saved-palettes-list::-webkit-scrollbar { width: 6px; }
+.saved-palettes-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.14); border-radius: 999px; }
+.saved-palettes-empty { color: var(--muted-2); font-size: 0.85rem; margin: 0; text-align: center; padding: 10px 0; }
+.saved-palette-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 8px 10px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: var(--radius-sm); }
+.saved-palette-info { min-width: 0; }
+.saved-palette-name { display: block; font-size: 0.85rem; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.saved-palette-meta { display: block; font-size: 0.75rem; color: var(--muted-2); margin-top: 1px; }
+.saved-palette-actions { display: flex; gap: 5px; flex-shrink: 0; }
+
 .swap-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
 .caption-group { display: inline-flex; align-items: center; gap: 6px; }
 .info-tip { position: relative; display: inline-flex; align-items: center; }
@@ -512,6 +541,39 @@ button:active { transform: translateY(0); }
 .footer-note { color: var(--muted); font-size: 0.9rem; line-height: 1.55; text-align: center; margin: 28px 0 0; }
 .footer-note + .footer-note { margin-top: 2px; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+.palette-format-dialog {
+  padding: 18px;
+  background: #111923;
+  border: 1px solid rgba(127, 199, 255, 0.16);
+  border-radius: var(--radius-md);
+  box-shadow: 0 22px 54px rgba(0, 0, 0, 0.52);
+  color: var(--text);
+  max-width: 280px;
+  width: 100%;
+  display: grid;
+  gap: 12px;
+}
+.palette-format-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+}
+.palette-format-dialog-label { margin: 0; font-size: 0.88rem; color: var(--muted); }
+.palette-format-dialog-options { display: grid; gap: 3px; }
+.palette-format-dialog-options button {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  box-shadow: none;
+  text-align: left;
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+.palette-format-dialog-options button:hover { background: rgba(255, 255, 255, 0.055); color: var(--text); transform: none; filter: none; }
+.palette-format-dialog-cancel { width: 100%; justify-content: center; font-size: 0.85rem; }
 
 @media (max-width: 900px) {
   .header-inner { align-items: flex-start; flex-direction: column; }

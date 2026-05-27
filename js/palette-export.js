@@ -28,7 +28,7 @@ function getSortedSpriteMappings(mappings) {
   const normal = [];
 
   mappings.forEach(mapping => {
-    const hex = mapping.replacementHex.toUpperCase();
+    const hex = mapping.source.hex.toUpperCase();
     if (hex === "#FFFFFF") white.push(mapping);
     else if (hex === "#000000") black.push(mapping);
     else normal.push(mapping);
@@ -41,18 +41,18 @@ function getExportOrderedMappings(mappings, includeBlackWhite) {
   const sorted = getSortedSpriteMappings(mappings);
   if (includeBlackWhite) return sorted;
   return sorted.filter(mapping => {
-    const hex = mapping.replacementHex.toUpperCase();
+    const hex = mapping.source.hex.toUpperCase();
     return hex !== "#FFFFFF" && hex !== "#000000";
   });
 }
 
 function getDefaultColorName(mapping, mappings) {
-  const hex = mapping.replacementHex.toUpperCase();
+  const hex = mapping.source.hex.toUpperCase();
   if (hex === "#000000") return "Black";
   if (hex === "#FFFFFF") return "White";
 
   const normalMappings = getSortedSpriteMappings(mappings).filter(item => {
-    const itemHex = item.replacementHex.toUpperCase();
+    const itemHex = item.source.hex.toUpperCase();
     return itemHex !== "#000000" && itemHex !== "#FFFFFF";
   });
 
@@ -159,9 +159,9 @@ function parsePalettePreviewText(text, format) {
 
   if (format === "palettes/jasc.pal") {
     const meaningful = lines.map(line => line.trim()).filter(Boolean);
-    if (meaningful.length < 3 || meaningful[0] !== "JASC-PAL") throw new Error("Expected JASC-PAL header.");
-
-    meaningful.slice(3).forEach(line => {
+    const isJasc = meaningful.length >= 3 && meaningful[0] === "JASC-PAL";
+    const colorLines = isJasc ? meaningful.slice(3) : meaningful;
+    colorLines.forEach(line => {
       const numbers = line.match(/[0-9]+/g)?.map(Number) || [];
       if (numbers.length < 3) return;
       colors.push({ r: numbers[0], g: numbers[1], b: numbers[2] });
@@ -180,7 +180,8 @@ function parsePalettePreviewText(text, format) {
       const trimmed = line.trim();
       if (!trimmed) return;
       const pieces = trimmed.split(";");
-      const parsed = parsePalette(pieces[0].trim(), sourceFormat)[0];
+      let parsed;
+      try { parsed = parsePalette(pieces[0].trim(), sourceFormat)[0]; } catch { return; }
       if (!parsed) return;
       colors.push({ r: parsed.r8, g: parsed.g8, b: parsed.b8, name: pieces.slice(1).join(";").trim() });
     });
