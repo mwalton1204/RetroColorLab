@@ -394,17 +394,21 @@ function initSpriteRecolorer() {
         swapPendingId = null;
         updateSwapPending();
       } else {
-        const idxA = mappings.findIndex(m => m.id === swapPendingId);
-        const idxB = mappings.findIndex(m => m.id === clickedId);
-        if (idxA >= 0 && idxB >= 0) {
-          const tempHex = mappings[idxA].replacementHex;
-          mappings[idxA].replacementHex = mappings[idxB].replacementHex;
-          mappings[idxB].replacementHex = tempHex;
-          [mappings[idxA], mappings[idxB]] = [mappings[idxB], mappings[idxA]];
-          [names[idxA], names[idxB]] = [names[idxB], names[idxA]];
+        const mappingA = mappings.find(m => m.id === swapPendingId);
+        const mappingB = mappings.find(m => m.id === clickedId);
+        if (mappingA && mappingB) {
+          const tempHex = mappingA.replacementHex;
+          mappingA.replacementHex = mappingB.replacementHex;
+          mappingB.replacementHex = tempHex;
+          const rowA = swapList.querySelector(`.swap-row[data-mapping-id="${mappingA.id}"]`);
+          const rowB = swapList.querySelector(`.swap-row[data-mapping-id="${mappingB.id}"]`);
+          if (rowA) rowA.style.setProperty("--replacement-color", mappingA.replacementHex);
+          if (rowB) rowB.style.setProperty("--replacement-color", mappingB.replacementHex);
+          mappingA.pickr?.setColor(mappingA.replacementHex, true);
+          mappingB.pickr?.setColor(mappingB.replacementHex, true);
         }
         swapPendingId = null;
-        renderSwapControls();
+        updateSwapPending();
         recolorSprite();
         showToast(spriteToast, "Colors swapped.");
       }

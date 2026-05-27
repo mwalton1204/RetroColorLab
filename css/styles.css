@@ -536,6 +536,7 @@ button:active { transform: translateY(0); }
 .swap-editor input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(127, 199, 255, 0.14); }
 .swap-row .pickr, .swap-row .pickr-anchor, .swap-row .pickr .pcr-button { width: 30px !important; height: 30px !important; min-width: 30px; min-height: 30px; max-width: 30px; max-height: 30px; border-radius: 999px !important; aspect-ratio: 1 / 1; flex-shrink: 0; box-sizing: border-box; }
 .swap-row .pickr .pcr-button { border: 2px solid rgba(255,255,255,0.95) !important; background-color: var(--replacement-color) !important; box-shadow: 0 0 0 3px rgba(255,255,255,0.08), inset 0 0 0 1px rgba(255,255,255,0.95); cursor: pointer; transition: transform 90ms ease, box-shadow 90ms ease, border-color 90ms ease; position: relative; }
+.swap-row .pickr .pcr-button::after { background: var(--replacement-color) !important; }
 .swap-row .pickr .pcr-button:hover { transform: scale(1.08); box-shadow: 0 0 0 4px rgba(255,255,255,0.14), inset 0 0 0 1px rgba(255,255,255,1); }
 .editable-color { position: relative; width: 30px; height: 30px; flex-shrink: 0; }
 .editable-color .pickr, .editable-color .pickr-anchor, .editable-color .pickr .pcr-button { width: 30px !important; height: 30px !important; }
