@@ -543,7 +543,7 @@ button:active { transform: translateY(0); }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
 .palette-format-dialog {
-  padding: 18px;
+  padding: 0;
   background: #111923;
   border: 1px solid rgba(127, 199, 255, 0.16);
   border-radius: var(--radius-md);
@@ -551,13 +551,12 @@ button:active { transform: translateY(0); }
   color: var(--text);
   max-width: 280px;
   width: 100%;
-  display: grid;
-  gap: 12px;
 }
 .palette-format-dialog::backdrop {
   background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(4px);
 }
+.palette-format-dialog-inner { padding: 18px; display: grid; gap: 12px; }
 .palette-format-dialog-label { margin: 0; font-size: 0.88rem; color: var(--muted); }
 .palette-format-dialog-options { display: grid; gap: 3px; }
 .palette-format-dialog-options button {

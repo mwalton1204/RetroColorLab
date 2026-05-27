@@ -259,16 +259,18 @@
   </main>
 
   <dialog id="paletteFormatDialog" class="palette-format-dialog">
-    <p class="palette-format-dialog-label">Select the format of the imported file:</p>
-    <div id="paletteFormatDialogOptions" class="palette-format-dialog-options">
-      <button type="button" data-value="palettes/jasc.pal">JASC .pal</button>
-      <button type="button" data-value="palettes/gimp.gpl">GIMP .gpl</button>
-      <button type="button" data-value="palettes/rgb888.txt">RGB888 .txt</button>
-      <button type="button" data-value="palettes/rgb555.txt">RGB555 .txt</button>
-      <button type="button" data-value="palettes/rgb565.txt">RGB565 .txt</button>
-      <button type="button" data-value="palettes/rgb444.txt">RGB444 .txt</button>
+    <div class="palette-format-dialog-inner">
+      <p class="palette-format-dialog-label">Select the format of the imported file:</p>
+      <div id="paletteFormatDialogOptions" class="palette-format-dialog-options">
+        <button type="button" data-value="palettes/jasc.pal">JASC .pal</button>
+        <button type="button" data-value="palettes/gimp.gpl">GIMP .gpl</button>
+        <button type="button" data-value="palettes/rgb888.txt">RGB888 .txt</button>
+        <button type="button" data-value="palettes/rgb555.txt">RGB555 .txt</button>
+        <button type="button" data-value="palettes/rgb565.txt">RGB565 .txt</button>
+        <button type="button" data-value="palettes/rgb444.txt">RGB444 .txt</button>
+      </div>
+      <button id="paletteFormatDialogCancel" type="button" class="secondary palette-format-dialog-cancel">Cancel</button>
     </div>
-    <button id="paletteFormatDialogCancel" type="button" class="secondary palette-format-dialog-cancel">Cancel</button>
   </dialog>
 
   <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
