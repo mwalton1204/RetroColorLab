@@ -50,6 +50,7 @@ function initSpriteRecolorer() {
   let spriteZoom = 1;
   let hoveredMappingId = null;
   let pinnedMappingId = null;
+  let swapPendingId = null;
 
   function includeBlackWhite() {
     return !excludeBlackWhiteToggle.checked;
@@ -86,6 +87,18 @@ function initSpriteRecolorer() {
         row.classList.add("swap-row--highlighted");
         if (!pinnedMappingId) row.scrollIntoView({ block: "nearest", behavior: "instant" });
       }
+    }
+  }
+
+  function updateSwapPending() {
+    swapList.querySelectorAll(".swap-row--swap-pending").forEach(el => el.classList.remove("swap-row--swap-pending"));
+    swapList.querySelectorAll(".swap-position-btn.is-pending").forEach(el => el.classList.remove("is-pending"));
+    if (!swapPendingId) return;
+    const row = swapList.querySelector(`.swap-row[data-mapping-id="${swapPendingId}"]`);
+    if (row) {
+      row.classList.add("swap-row--swap-pending");
+      const btn = row.querySelector(".swap-position-btn");
+      if (btn) btn.classList.add("is-pending");
     }
   }
 
@@ -137,6 +150,7 @@ function initSpriteRecolorer() {
 
     getSortedSpriteMappings(mappings).forEach((mapping, visibleIndex) => {
       const originalIndex = mappings.findIndex(item => item.id === mapping.id);
+      const isBlackOrWhite = mapping.source.hex.toUpperCase() === "#FFFFFF" || mapping.source.hex.toUpperCase() === "#000000";
       const row = document.createElement("div");
       row.className = "swap-row";
       row.dataset.mappingId = mapping.id;
@@ -150,6 +164,7 @@ function initSpriteRecolorer() {
           <button class="swap-reset-btn" type="button" aria-label="Reset this color" title="Reset this color" data-reset-mapping-id="${mapping.id}">
             <span class="material-symbols-rounded">restart_alt</span>
           </button>
+          ${!isBlackOrWhite ? `<button class="swap-position-btn" type="button" aria-label="Swap position of this color" title="Swap position with another color" data-swap-position-id="${mapping.id}"><span class="material-symbols-rounded">swap_vert</span></button>` : ""}
         </div>
         <div class="swap-editor" data-mapping-id="${mapping.id}">
           <input
@@ -175,6 +190,7 @@ function initSpriteRecolorer() {
 
     updatePaletteFilePreview();
     updateHighlights();
+    updateSwapPending();
   }
 
   function applySpriteZoom() {
@@ -251,6 +267,7 @@ function initSpriteRecolorer() {
         names = mappings.map(mapping => getDefaultColorName(mapping, mappings));
         hoveredMappingId = null;
         pinnedMappingId = null;
+        swapPendingId = null;
 
         originalEmpty.style.display = "none";
         originalCanvas.style.display = "block";
@@ -282,6 +299,7 @@ function initSpriteRecolorer() {
 
     hoveredMappingId = null;
     pinnedMappingId = null;
+    swapPendingId = null;
     originalCanvas.style.display = "none";
     originalCanvas.classList.remove("is-picking");
     previewCanvas.style.display = "none";
@@ -366,6 +384,33 @@ function initSpriteRecolorer() {
   clearSpriteBtn.addEventListener("click", clearSprite);
 
   swapList.addEventListener("click", async event => {
+    const swapPositionButton = event.target.closest(".swap-position-btn");
+    if (swapPositionButton) {
+      const clickedId = swapPositionButton.dataset.swapPositionId;
+      if (swapPendingId === null) {
+        swapPendingId = clickedId;
+        updateSwapPending();
+      } else if (swapPendingId === clickedId) {
+        swapPendingId = null;
+        updateSwapPending();
+      } else {
+        const idxA = mappings.findIndex(m => m.id === swapPendingId);
+        const idxB = mappings.findIndex(m => m.id === clickedId);
+        if (idxA >= 0 && idxB >= 0) {
+          const tempHex = mappings[idxA].replacementHex;
+          mappings[idxA].replacementHex = mappings[idxB].replacementHex;
+          mappings[idxB].replacementHex = tempHex;
+          [mappings[idxA], mappings[idxB]] = [mappings[idxB], mappings[idxA]];
+          [names[idxA], names[idxB]] = [names[idxB], names[idxA]];
+        }
+        swapPendingId = null;
+        renderSwapControls();
+        recolorSprite();
+        showToast(spriteToast, "Colors swapped.");
+      }
+      return;
+    }
+
     const resetButton = event.target.closest(".swap-reset-btn");
     if (resetButton) {
       const mapping = mappings.find(item => item.id === resetButton.dataset.resetMappingId);
@@ -406,6 +451,7 @@ function initSpriteRecolorer() {
   resetSwapColorsBtn.addEventListener("click", () => {
     mappings = buildMappings(spriteColors);
     names = mappings.map(mapping => getDefaultColorName(mapping, mappings));
+    swapPendingId = null;
     renderSwapControls();
     recolorSprite();
     showToast(spriteToast, "Swap colors reset.");
@@ -576,7 +622,10 @@ function initSpriteRecolorer() {
       return;
     }
     const name = savePaletteName.value.trim() || "Unnamed Palette";
-    const colors = getSortedSpriteMappings(mappings).map(mapping => {
+    const sortedForSave = getSortedSpriteMappings(mappings);
+    const hasWhite = sortedForSave.length > 0 && sortedForSave[0].source.hex.toUpperCase() === "#FFFFFF";
+    const hasBlack = sortedForSave.length > 0 && sortedForSave[sortedForSave.length - 1].source.hex.toUpperCase() === "#000000";
+    const colors = sortedForSave.map(mapping => {
       const originalIndex = mappings.findIndex(item => item.id === mapping.id);
       return {
         replacementHex: mapping.replacementHex,
@@ -584,7 +633,7 @@ function initSpriteRecolorer() {
       };
     });
     try {
-      await savePalette(name, colors);
+      await savePalette(name, colors, hasWhite, hasBlack);
       savePaletteName.value = "";
       await refreshSavedPalettesList();
       showToast(spriteToast, "Palette saved.");
@@ -604,14 +653,37 @@ function initSpriteRecolorer() {
       try {
         const palette = await loadPaletteById(id);
         if (!palette) return;
-        const sortedMappings = getSortedSpriteMappings(mappings);
-        palette.colors.forEach((saved, index) => {
-          if (index >= sortedMappings.length) return;
-          const mapping = sortedMappings[index];
+        const sorted = getSortedSpriteMappings(mappings);
+        const currentHasWhite = sorted.length > 0 && sorted[0].source.hex.toUpperCase() === "#FFFFFF";
+        const currentHasBlack = sorted.length > 0 && sorted[sorted.length - 1].source.hex.toUpperCase() === "#000000";
+
+        function applyEntry(saved, mapping) {
           const originalIndex = mappings.findIndex(item => item.id === mapping.id);
           mapping.replacementHex = saved.replacementHex;
           if (saved.name) names[originalIndex] = saved.name;
-        });
+        }
+
+        if (palette.hasWhite !== undefined) {
+          const savedNormals = palette.colors.slice(
+            palette.hasWhite ? 1 : 0,
+            palette.colors.length - (palette.hasBlack ? 1 : 0)
+          );
+          const currentNormals = sorted.slice(
+            currentHasWhite ? 1 : 0,
+            sorted.length - (currentHasBlack ? 1 : 0)
+          );
+          if (palette.hasWhite && currentHasWhite) applyEntry(palette.colors[0], sorted[0]);
+          if (palette.hasBlack && currentHasBlack) applyEntry(palette.colors[palette.colors.length - 1], sorted[sorted.length - 1]);
+          savedNormals.forEach((saved, index) => {
+            if (index >= currentNormals.length) return;
+            applyEntry(saved, currentNormals[index]);
+          });
+        } else {
+          palette.colors.forEach((saved, index) => {
+            if (index >= sorted.length) return;
+            applyEntry(saved, sorted[index]);
+          });
+        }
         renderSwapControls();
         recolorSprite();
         showToast(spriteToast, `Loaded "${palette.name}".`);
@@ -687,18 +759,24 @@ function initSpriteRecolorer() {
     const hasBlackSlot = sorted.length > 0 && sorted[sorted.length - 1].source.hex.toUpperCase() === "#000000";
     const bwCount = (hasWhiteSlot ? 1 : 0) + (hasBlackSlot ? 1 : 0);
 
-    if (!excludeBlackWhiteToggle.checked && bwCount > 0 && parsedColors.length === sorted.length - bwCount) {
-      if (hasWhiteSlot) parsedColors.unshift({ r: 255, g: 255, b: 255 });
-      if (hasBlackSlot) parsedColors.push({ r: 0, g: 0, b: 0 });
-    }
-
-    parsedColors.forEach((color, index) => {
-      if (index >= sorted.length) return;
-      const mapping = sorted[index];
+    function applyImportColor(color, mapping) {
       const originalIndex = mappings.findIndex(item => item.id === mapping.id);
       mapping.replacementHex = toHex(color.r, color.g, color.b);
       if (color.name) names[originalIndex] = color.name;
-    });
+    }
+
+    if (bwCount > 0 && parsedColors.length === sorted.length - bwCount) {
+      const normals = sorted.slice(hasWhiteSlot ? 1 : 0, sorted.length - (hasBlackSlot ? 1 : 0));
+      parsedColors.forEach((color, index) => {
+        if (index >= normals.length) return;
+        applyImportColor(color, normals[index]);
+      });
+    } else {
+      parsedColors.forEach((color, index) => {
+        if (index >= sorted.length) return;
+        applyImportColor(color, sorted[index]);
+      });
+    }
 
     const formatLabel = paletteFileFormatMenu.querySelector(`[data-value="${format}"]`)?.textContent || format;
     setPaletteFileFormat(format, formatLabel);

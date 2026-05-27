@@ -16,7 +16,7 @@ function openPaletteDb() {
   });
 }
 
-async function savePalette(name, colors) {
+async function savePalette(name, colors, hasWhite = false, hasBlack = false) {
   const db = await openPaletteDb();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(PALETTE_STORE, "readwrite");
@@ -24,7 +24,9 @@ async function savePalette(name, colors) {
     const request = store.add({
       name: String(name || "Unnamed Palette").trim(),
       savedAt: new Date().toISOString(),
-      colors
+      colors,
+      hasWhite,
+      hasBlack
     });
     request.onsuccess = event => resolve(event.target.result);
     request.onerror = event => reject(event.target.error);

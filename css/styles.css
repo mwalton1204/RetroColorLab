@@ -218,7 +218,7 @@ textarea:focus, input[type="file"]:focus, select:focus { border-color: var(--acc
 
 .pickr-anchor { width: 48px; height: 48px; }
 .input-picker-inline.pickr-anchor { width: 48px !important; height: 48px !important; }
-.output-copy-btn, .preview-download-btn, .upload-clear-btn, .swap-reset-btn, .copy-color-btn {
+.output-copy-btn, .preview-download-btn, .upload-clear-btn, .swap-reset-btn, .swap-position-btn, .copy-color-btn {
   padding: 0;
   display: inline-flex;
   align-items: center;
@@ -230,13 +230,13 @@ textarea:focus, input[type="file"]:focus, select:focus { border-color: var(--acc
   box-shadow: none;
 }
 .output-copy-btn { width: 48px; height: 48px; min-width: 48px; min-height: 48px; border-radius: var(--radius-md); }
-.preview-download-btn, .upload-clear-btn, .swap-reset-btn { width: 30px; height: 30px; min-width: 30px; }
+.preview-download-btn, .upload-clear-btn, .swap-reset-btn, .swap-position-btn { width: 30px; height: 30px; min-width: 30px; }
 .copy-color-btn { width: 22px; height: 22px; min-width: 22px; }
-.output-copy-btn:hover, .preview-download-btn:hover, .upload-clear-btn:hover, .swap-reset-btn:hover, .copy-color-btn:hover { color: var(--text); background: rgba(255,255,255,0.1); }
+.output-copy-btn:hover, .preview-download-btn:hover, .upload-clear-btn:hover, .swap-reset-btn:hover, .swap-position-btn:hover, .copy-color-btn:hover { color: var(--text); background: rgba(255,255,255,0.1); }
 .preview-download-btn.active { color: var(--accent-text); background: var(--accent); border-color: transparent; }
 .material-symbols-rounded { line-height: 1; font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20; }
 .output-copy-btn .material-symbols-rounded, .preview-download-btn .material-symbols-rounded { font-size: 18px; }
-.upload-clear-btn .material-symbols-rounded, .swap-reset-btn .material-symbols-rounded { font-size: 16px; }
+.upload-clear-btn .material-symbols-rounded, .swap-reset-btn .material-symbols-rounded, .swap-position-btn .material-symbols-rounded { font-size: 16px; }
 .copy-color-btn .material-symbols-rounded { font-size: 13px; }
 .pickr .pcr-button { width: 100%; height: 44px; border-radius: 12px; border: 0 !important; box-shadow: none !important; outline: 0 !important; overflow: hidden; }
 .pickr .pcr-button::before { display: none !important; content: none !important; background: transparent !important; }
@@ -447,7 +447,7 @@ button:active { transform: translateY(0); }
 .zoom-btn.active { background: var(--accent); color: var(--accent-text); border-color: transparent; }
 .empty-state { display: grid; place-items: center; min-height: 82px; color: var(--muted-2); border: 1px dashed var(--border); border-radius: 18px; background: rgba(255, 255, 255, 0.025); text-align: center; padding: 18px; }
 
-.palette-file-head { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 12px; }
+.palette-file-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .palette-file-head h3 { margin-bottom: 0; }
 .palette-file-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px; }
 .palette-file-button-row { display: flex; align-items: center; gap: 8px; }
@@ -509,6 +509,8 @@ button:active { transform: translateY(0); }
 .info-tip:hover .info-tip-content { opacity: 1; }
 .swap-row--highlighted { border-color: var(--accent) !important; background: rgba(127, 199, 255, 0.08) !important; }
 .swap-row--pinned { border-color: var(--accent) !important; background: rgba(127, 199, 255, 0.16) !important; box-shadow: 0 0 0 2px rgba(127, 199, 255, 0.3); }
+.swap-row--swap-pending { border-color: rgba(157, 240, 195, 0.6) !important; background: rgba(157, 240, 195, 0.08) !important; box-shadow: 0 0 0 2px rgba(157, 240, 195, 0.2); }
+.swap-position-btn.is-pending { color: var(--success); border-color: rgba(157, 240, 195, 0.4); background: rgba(157, 240, 195, 0.1); }
 #originalCanvas.is-picking { cursor: crosshair; }
 .swap-head h3 { margin-bottom: 0; }
 .sprite-format-section-inline { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.07); }
