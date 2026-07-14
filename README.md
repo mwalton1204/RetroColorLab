@@ -34,7 +34,7 @@ It is designed for pixel artists, retro game developers, and ROM hackers working
 
 ### Sprite Lab
 
-<img src="assets/SpriteLabScreenshot.png" alt="RetroColorLab Sprite Lab showing color controls and original and recolored sprite previews" />
+<img src="assets/SpriteLabScreenshot.png" alt="RetroColorLab Sprite Lab" />
 
 - Upload or drag and drop PNG, JPEG, WebP, and GIF images
 - Detect every unique non-transparent color automatically
