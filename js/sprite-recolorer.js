@@ -24,12 +24,15 @@ function initSpriteRecolorer() {
   const downloadPaletteFileBtn = document.getElementById("downloadPaletteFileBtn");
   const editPaletteFileBtn = document.getElementById("editPaletteFileBtn");
   const excludeBlackWhiteToggle = document.getElementById("excludeBlackWhiteToggle");
-  const savedPalettesList = document.getElementById("savedPalettesList");
-  const savePaletteBtn = document.getElementById("savePaletteBtn");
-  const savePaletteName = document.getElementById("savePaletteName");
-  const exportPalettesBtn = document.getElementById("exportPalettesBtn");
-  const importPalettesBtn = document.getElementById("importPalettesBtn");
-  const importPalettesInput = document.getElementById("importPalettesInput");
+  const saveSpritePaletteBtn = document.getElementById("saveSpritePaletteBtn");
+  const importSavedPaletteBtn = document.getElementById("importSavedPaletteBtn");
+  const importSavedPaletteDialog = document.getElementById("importSavedPaletteDialog");
+  const importSavedPaletteList = document.getElementById("importSavedPaletteList");
+  const cancelImportSavedPaletteBtn = document.getElementById("cancelImportSavedPaletteBtn");
+  const saveSpritePaletteDialog = document.getElementById("saveSpritePaletteDialog");
+  const saveSpritePaletteForm = document.getElementById("saveSpritePaletteForm");
+  const saveSpritePaletteName = document.getElementById("saveSpritePaletteName");
+  const cancelSaveSpritePaletteBtn = document.getElementById("cancelSaveSpritePaletteBtn");
   const importPaletteFileBtn = document.getElementById("importPaletteFileBtn");
   const importPaletteFileInput = document.getElementById("importPaletteFileInput");
   const paletteFormatDialog = document.getElementById("paletteFormatDialog");
@@ -50,7 +53,8 @@ function initSpriteRecolorer() {
   let spriteZoom = 1;
   let hoveredMappingId = null;
   let pinnedMappingId = null;
-  let swapPendingId = null;
+  let draggedMappingId = null;
+  let currentSpriteName = "Sprite";
 
   function includeBlackWhite() {
     return !excludeBlackWhiteToggle.checked;
@@ -90,18 +94,6 @@ function initSpriteRecolorer() {
     }
   }
 
-  function updateSwapPending() {
-    swapList.querySelectorAll(".swap-row--swap-pending").forEach(el => el.classList.remove("swap-row--swap-pending"));
-    swapList.querySelectorAll(".swap-position-btn.is-pending").forEach(el => el.classList.remove("is-pending"));
-    if (!swapPendingId) return;
-    const row = swapList.querySelector(`.swap-row[data-mapping-id="${swapPendingId}"]`);
-    if (row) {
-      row.classList.add("swap-row--swap-pending");
-      const btn = row.querySelector(".swap-position-btn");
-      if (btn) btn.classList.add("is-pending");
-    }
-  }
-
   function buildMappings(colors) {
     return colors.map((color, index) => ({
       id: `color-${index}`,
@@ -116,9 +108,9 @@ function initSpriteRecolorer() {
     isPaletteFileEditable = isEditable;
     paletteFileText.readOnly = !isEditable;
     paletteFileText.classList.toggle("is-editable", isEditable);
-    editPaletteFileBtn.classList.toggle("active", isEditable);
-    editPaletteFileBtn.setAttribute("aria-pressed", String(isEditable));
-    editPaletteFileBtn.title = isEditable ? "Stop editing palette file text" : "Edit palette file text";
+    editPaletteFileBtn?.classList.toggle("active", isEditable);
+    editPaletteFileBtn?.setAttribute("aria-pressed", String(isEditable));
+    if (editPaletteFileBtn) editPaletteFileBtn.title = isEditable ? "Stop editing palette file text" : "Edit palette file text";
   }
 
   function getRows() {
@@ -148,23 +140,21 @@ function initSpriteRecolorer() {
     mappings.forEach(mapping => mapping.pickr?.destroyAndRemove?.());
     swapList.innerHTML = "";
 
-    getSortedSpriteMappings(mappings).forEach((mapping, visibleIndex) => {
+    getSortedSpriteMappings(mappings).forEach(mapping => {
       const originalIndex = mappings.findIndex(item => item.id === mapping.id);
-      const isBlackOrWhite = mapping.source.hex.toUpperCase() === "#FFFFFF" || mapping.source.hex.toUpperCase() === "#000000";
       const row = document.createElement("div");
       row.className = "swap-row";
       row.dataset.mappingId = mapping.id;
       row.style.setProperty("--replacement-color", mapping.replacementHex);
       row.innerHTML = `
         <div class="swap-map">
-          <span class="swap-index">${visibleIndex + 1}</span>
+          <span class="swap-drag-handle material-symbols-rounded" draggable="true" data-drag-mapping-id="${mapping.id}" aria-label="Drag to reorder color" title="Drag to reorder">drag_indicator</span>
           <div class="editable-color">
             <div class="pickr-anchor swap-pickr"></div>
           </div>
           <button class="swap-reset-btn" type="button" aria-label="Reset this color" title="Reset this color" data-reset-mapping-id="${mapping.id}">
             <span class="material-symbols-rounded">restart_alt</span>
           </button>
-          ${!isBlackOrWhite ? `<button class="swap-position-btn" type="button" aria-label="Swap position of this color" title="Swap position with another color" data-swap-position-id="${mapping.id}"><span class="material-symbols-rounded">swap_vert</span></button>` : ""}
         </div>
         <div class="swap-editor" data-mapping-id="${mapping.id}">
           <input
@@ -190,7 +180,6 @@ function initSpriteRecolorer() {
 
     updatePaletteFilePreview();
     updateHighlights();
-    updateSwapPending();
   }
 
   function applySpriteZoom() {
@@ -264,19 +253,24 @@ function initSpriteRecolorer() {
 
         spriteColors = Array.from(colorMap.values()).sort((a, b) => b.count - a.count);
         mappings = buildMappings(spriteColors);
+        currentSpriteName = file.name.replace(/\.[^.]+$/, "") || "Sprite";
         names = mappings.map(mapping => getDefaultColorName(mapping, mappings));
         hoveredMappingId = null;
         pinnedMappingId = null;
-        swapPendingId = null;
+        draggedMappingId = null;
 
         originalEmpty.style.display = "none";
         originalCanvas.style.display = "block";
         originalCanvas.classList.add("is-picking");
         originalSize.textContent = `${img.width}×${img.height}`;
         applySpriteZoom();
-        setPaletteFileEditable(false);
+        setPaletteFileEditable(true);
         renderSwapControls();
         recolorSprite();
+        saveSpritePaletteBtn.disabled = false;
+        importSavedPaletteBtn.disabled = false;
+        downloadPaletteFileBtn.disabled = false;
+        copyPaletteFileBtn.disabled = false;
       };
       img.src = event.target.result;
     };
@@ -289,6 +283,11 @@ function initSpriteRecolorer() {
     spriteColors = [];
     mappings = [];
     names = [];
+    currentSpriteName = "Sprite";
+    saveSpritePaletteBtn.disabled = true;
+    importSavedPaletteBtn.disabled = true;
+    downloadPaletteFileBtn.disabled = true;
+    copyPaletteFileBtn.disabled = true;
 
     originalCtx.clearRect(0, 0, originalCanvas.width, originalCanvas.height);
     previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
@@ -299,7 +298,7 @@ function initSpriteRecolorer() {
 
     hoveredMappingId = null;
     pinnedMappingId = null;
-    swapPendingId = null;
+    draggedMappingId = null;
     originalCanvas.style.display = "none";
     originalCanvas.classList.remove("is-picking");
     previewCanvas.style.display = "none";
@@ -308,7 +307,7 @@ function initSpriteRecolorer() {
     originalSize.textContent = "";
     previewSize.textContent = "";
     swapList.innerHTML = "";
-    setPaletteFileEditable(false);
+    setPaletteFileEditable(true);
     updatePaletteFilePreview();
     showToast(spriteToast, "Image cleared.");
   }
@@ -368,7 +367,7 @@ function initSpriteRecolorer() {
     paletteFileFormat = value;
     paletteFileFormatButton.textContent = label || value;
     paletteFileFormatMenu.querySelectorAll("button").forEach(btn => btn.classList.toggle("active", btn.dataset.value === value));
-    setPaletteFileEditable(false);
+    setPaletteFileEditable(true);
     updatePaletteFilePreview();
   }
 
@@ -384,37 +383,6 @@ function initSpriteRecolorer() {
   clearSpriteBtn.addEventListener("click", clearSprite);
 
   swapList.addEventListener("click", async event => {
-    const swapPositionButton = event.target.closest(".swap-position-btn");
-    if (swapPositionButton) {
-      const clickedId = swapPositionButton.dataset.swapPositionId;
-      if (swapPendingId === null) {
-        swapPendingId = clickedId;
-        updateSwapPending();
-      } else if (swapPendingId === clickedId) {
-        swapPendingId = null;
-        updateSwapPending();
-      } else {
-        const mappingA = mappings.find(m => m.id === swapPendingId);
-        const mappingB = mappings.find(m => m.id === clickedId);
-        if (mappingA && mappingB) {
-          const tempHex = mappingA.replacementHex;
-          mappingA.replacementHex = mappingB.replacementHex;
-          mappingB.replacementHex = tempHex;
-          const rowA = swapList.querySelector(`.swap-row[data-mapping-id="${mappingA.id}"]`);
-          const rowB = swapList.querySelector(`.swap-row[data-mapping-id="${mappingB.id}"]`);
-          if (rowA) rowA.style.setProperty("--replacement-color", mappingA.replacementHex);
-          if (rowB) rowB.style.setProperty("--replacement-color", mappingB.replacementHex);
-          mappingA.pickr?.setColor(mappingA.replacementHex, true);
-          mappingB.pickr?.setColor(mappingB.replacementHex, true);
-        }
-        swapPendingId = null;
-        updateSwapPending();
-        recolorSprite();
-        showToast(spriteToast, "Colors swapped.");
-      }
-      return;
-    }
-
     const resetButton = event.target.closest(".swap-reset-btn");
     if (resetButton) {
       const mapping = mappings.find(item => item.id === resetButton.dataset.resetMappingId);
@@ -433,6 +401,58 @@ function initSpriteRecolorer() {
     if (Number.isNaN(index)) return;
     await copyText(names[index] || `Color ${index + 1}`);
     showToast(spriteToast, "Color name copied.");
+  });
+
+  swapList.addEventListener("dragstart", event => {
+    const handle = event.target.closest(".swap-drag-handle");
+    if (!handle) return;
+    draggedMappingId = handle.dataset.dragMappingId;
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", draggedMappingId);
+    handle.closest(".swap-row")?.classList.add("swap-row--dragging");
+  });
+
+  swapList.addEventListener("dragover", event => {
+    if (!draggedMappingId) return;
+    const row = event.target.closest(".swap-row");
+    if (!row || row.dataset.mappingId === draggedMappingId || !row.querySelector(".swap-drag-handle")) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    swapList.querySelectorAll(".swap-row--drop-target").forEach(item => item.classList.remove("swap-row--drop-target"));
+    row.classList.add("swap-row--drop-target");
+  });
+
+  swapList.addEventListener("drop", event => {
+    const targetRow = event.target.closest(".swap-row");
+    if (!draggedMappingId || !targetRow || !targetRow.querySelector(".swap-drag-handle")) return;
+    event.preventDefault();
+
+    const ordered = getSortedSpriteMappings(mappings);
+    const fromIndex = ordered.findIndex(mapping => mapping.id === draggedMappingId);
+    const toIndex = ordered.findIndex(mapping => mapping.id === targetRow.dataset.mappingId);
+    if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return;
+
+    const values = ordered.map(mapping => {
+      const originalIndex = mappings.findIndex(item => item.id === mapping.id);
+      return { replacementHex: mapping.replacementHex, name: names[originalIndex] };
+    });
+    const [moved] = values.splice(fromIndex, 1);
+    values.splice(toIndex, 0, moved);
+    ordered.forEach((mapping, index) => {
+      const originalIndex = mappings.findIndex(item => item.id === mapping.id);
+      mapping.replacementHex = values[index].replacementHex;
+      names[originalIndex] = values[index].name;
+    });
+
+    draggedMappingId = null;
+    renderSwapControls();
+    recolorSprite();
+    showToast(spriteToast, "Color order updated.");
+  });
+
+  swapList.addEventListener("dragend", () => {
+    draggedMappingId = null;
+    swapList.querySelectorAll(".swap-row--dragging, .swap-row--drop-target").forEach(row => row.classList.remove("swap-row--dragging", "swap-row--drop-target"));
   });
 
   swapList.addEventListener("input", event => {
@@ -455,10 +475,10 @@ function initSpriteRecolorer() {
   resetSwapColorsBtn.addEventListener("click", () => {
     mappings = buildMappings(spriteColors);
     names = mappings.map(mapping => getDefaultColorName(mapping, mappings));
-    swapPendingId = null;
+    draggedMappingId = null;
     renderSwapControls();
     recolorSprite();
-    showToast(spriteToast, "Swap colors reset.");
+    showToast(spriteToast, "Colors reset.");
   });
 
   downloadSpriteBtn.addEventListener("click", () => {
@@ -526,14 +546,16 @@ function initSpriteRecolorer() {
     }
   });
 
-  downloadPaletteFileBtn.addEventListener("click", () => {
+  downloadPaletteFileBtn?.addEventListener("click", () => {
     if (!paletteFileText.value.trim() || paletteFileText.value === "No sprite uploaded.") return;
     const selectedName = paletteFileFormat.split("/").pop() || "palette.txt";
+    const extension = selectedName.split(".").pop() || "txt";
+    const formatSuffix = extension === "txt" ? `-${selectedName.replace(/\.txt$/i, "")}` : "";
     const blob = new Blob([paletteFileText.value], { type: "text/plain;charset=utf-8" });
     const objectUrl = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = objectUrl;
-    link.download = `${sanitizeFileName("retrocolorlab")}-${selectedName}`;
+    link.download = `${sanitizeFileName(currentSpriteName)}${formatSuffix}.${extension}`;
     link.style.display = "none";
     document.body.appendChild(link);
     link.click();
@@ -548,7 +570,7 @@ function initSpriteRecolorer() {
     showToast(spriteToast, "Palette file text copied.");
   });
 
-  editPaletteFileBtn.addEventListener("click", () => setPaletteFileEditable(!isPaletteFileEditable));
+  editPaletteFileBtn?.addEventListener("click", () => setPaletteFileEditable(!isPaletteFileEditable));
 
   excludeBlackWhiteToggle.addEventListener("change", updatePaletteFilePreview);
 
@@ -583,49 +605,105 @@ function initSpriteRecolorer() {
     }
   });
 
-  async function refreshSavedPalettesList() {
-    let palettes;
-    try {
-      palettes = await listPalettes();
-    } catch {
-      return;
-    }
-    savedPalettesList.innerHTML = "";
-    if (palettes.length === 0) {
+  async function openSavedPaletteDialog() {
+    importSavedPaletteList.replaceChildren();
+    let palettes = [];
+    try { palettes = await listPalettes(); } catch {}
+
+    if (!palettes.length) {
       const empty = document.createElement("p");
       empty.className = "saved-palettes-empty";
-      empty.textContent = "No saved palettes.";
-      savedPalettesList.appendChild(empty);
-      return;
-    }
-    palettes.forEach(palette => {
-      const row = document.createElement("div");
-      row.className = "saved-palette-row";
-      const dateStr = new Date(palette.savedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-      row.innerHTML = `
-        <div class="saved-palette-info">
+      empty.textContent = "No saved palettes. Create one in Palette Builder first.";
+      importSavedPaletteList.appendChild(empty);
+    } else {
+      palettes.forEach(palette => {
+        const button = document.createElement("button");
+        button.className = "import-saved-palette-option";
+        button.type = "button";
+        button.dataset.paletteId = String(palette.id);
+        button.innerHTML = `
           <span class="saved-palette-name">${escapeHtml(palette.name)}</span>
-          <span class="saved-palette-meta">${palette.colorCount} color${palette.colorCount === 1 ? "" : "s"} · ${dateStr}</span>
-        </div>
-        <div class="saved-palette-actions">
-          <button class="preview-download-btn load-palette-btn" type="button" aria-label="Load palette" title="Load palette" data-palette-id="${palette.id}">
-            <span class="material-symbols-rounded">palette</span>
-          </button>
-          <button class="preview-download-btn delete-palette-btn" type="button" aria-label="Delete palette" title="Delete palette" data-palette-id="${palette.id}">
-            <span class="material-symbols-rounded">delete</span>
-          </button>
-        </div>
-      `;
-      savedPalettesList.appendChild(row);
-    });
+          <span class="saved-palette-meta">${palette.colorCount} color${palette.colorCount === 1 ? "" : "s"}</span>
+          <span class="material-symbols-rounded" aria-hidden="true">chevron_right</span>`;
+        importSavedPaletteList.appendChild(button);
+      });
+    }
+    importSavedPaletteDialog.showModal();
   }
 
-  savePaletteBtn.addEventListener("click", async () => {
+  function applySavedPalette(palette) {
+    const sorted = getSortedSpriteMappings(mappings);
+    const currentHasWhite = sorted.length > 0 && sorted[0].source.hex.toUpperCase() === "#FFFFFF";
+    const currentHasBlack = sorted.length > 0 && sorted[sorted.length - 1].source.hex.toUpperCase() === "#000000";
+
+    function applyEntry(saved, mapping) {
+      const originalIndex = mappings.findIndex(item => item.id === mapping.id);
+      mapping.replacementHex = saved.replacementHex;
+      if (saved.name) names[originalIndex] = saved.name;
+    }
+
+    if (palette.source === "builder") {
+      palette.colors.forEach((saved, index) => {
+        if (index < sorted.length) applyEntry(saved, sorted[index]);
+      });
+    } else if (palette.hasWhite !== undefined) {
+      const savedNormals = palette.colors.slice(palette.hasWhite ? 1 : 0, palette.colors.length - (palette.hasBlack ? 1 : 0));
+      const currentNormals = sorted.slice(currentHasWhite ? 1 : 0, sorted.length - (currentHasBlack ? 1 : 0));
+      if (palette.hasWhite && currentHasWhite) applyEntry(palette.colors[0], sorted[0]);
+      if (palette.hasBlack && currentHasBlack) applyEntry(palette.colors[palette.colors.length - 1], sorted[sorted.length - 1]);
+      savedNormals.forEach((saved, index) => {
+        if (index < currentNormals.length) applyEntry(saved, currentNormals[index]);
+      });
+    } else {
+      palette.colors.forEach((saved, index) => {
+        if (index < sorted.length) applyEntry(saved, sorted[index]);
+      });
+    }
+
+    renderSwapControls();
+    recolorSprite();
+  }
+
+  importSavedPaletteBtn.addEventListener("click", openSavedPaletteDialog);
+  cancelImportSavedPaletteBtn.addEventListener("click", () => importSavedPaletteDialog.close());
+  importSavedPaletteList.addEventListener("click", async event => {
+    const option = event.target.closest(".import-saved-palette-option");
+    if (!option) return;
+    try {
+      const palette = await loadPaletteById(Number(option.dataset.paletteId));
+      if (!palette) return;
+      applySavedPalette(palette);
+      importSavedPaletteDialog.close();
+      showToast(spriteToast, `Imported “${palette.name}”.`);
+    } catch {
+      showToast(spriteToast, "Palette could not be imported.");
+    }
+  });
+
+  saveSpritePaletteBtn.addEventListener("click", () => {
     if (!originalImageData || mappings.length === 0) {
       showToast(spriteToast, "Upload a sprite first.");
       return;
     }
-    const name = savePaletteName.value.trim() || "Unnamed Palette";
+    saveSpritePaletteName.value = currentSpriteName;
+    saveSpritePaletteDialog.showModal();
+    saveSpritePaletteName.select();
+  });
+
+  cancelSaveSpritePaletteBtn.addEventListener("click", () => saveSpritePaletteDialog.close());
+
+  saveSpritePaletteForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (!originalImageData || mappings.length === 0) {
+      saveSpritePaletteDialog.close();
+      showToast(spriteToast, "Upload a sprite first.");
+      return;
+    }
+    const name = saveSpritePaletteName.value.trim();
+    if (!name) {
+      saveSpritePaletteName.focus();
+      return;
+    }
     const sortedForSave = getSortedSpriteMappings(mappings);
     const hasWhite = sortedForSave.length > 0 && sortedForSave[0].source.hex.toUpperCase() === "#FFFFFF";
     const hasBlack = sortedForSave.length > 0 && sortedForSave[sortedForSave.length - 1].source.hex.toUpperCase() === "#000000";
@@ -638,98 +716,15 @@ function initSpriteRecolorer() {
     });
     try {
       await savePalette(name, colors, hasWhite, hasBlack);
-      savePaletteName.value = "";
-      await refreshSavedPalettesList();
-      showToast(spriteToast, "Palette saved.");
+      saveSpritePaletteDialog.close();
+      document.dispatchEvent(new CustomEvent("palette-library-changed"));
+      showToast(spriteToast, `“${name}” saved to Palette Builder.`);
     } catch {
       showToast(spriteToast, "Failed to save palette.");
     }
   });
 
-  savedPalettesList.addEventListener("click", async event => {
-    const loadBtn = event.target.closest(".load-palette-btn");
-    if (loadBtn) {
-      if (!originalImageData || mappings.length === 0) {
-        showToast(spriteToast, "Upload a sprite first.");
-        return;
-      }
-      const id = Number(loadBtn.dataset.paletteId);
-      try {
-        const palette = await loadPaletteById(id);
-        if (!palette) return;
-        const sorted = getSortedSpriteMappings(mappings);
-        const currentHasWhite = sorted.length > 0 && sorted[0].source.hex.toUpperCase() === "#FFFFFF";
-        const currentHasBlack = sorted.length > 0 && sorted[sorted.length - 1].source.hex.toUpperCase() === "#000000";
-
-        function applyEntry(saved, mapping) {
-          const originalIndex = mappings.findIndex(item => item.id === mapping.id);
-          mapping.replacementHex = saved.replacementHex;
-          if (saved.name) names[originalIndex] = saved.name;
-        }
-
-        if (palette.hasWhite !== undefined) {
-          const savedNormals = palette.colors.slice(
-            palette.hasWhite ? 1 : 0,
-            palette.colors.length - (palette.hasBlack ? 1 : 0)
-          );
-          const currentNormals = sorted.slice(
-            currentHasWhite ? 1 : 0,
-            sorted.length - (currentHasBlack ? 1 : 0)
-          );
-          if (palette.hasWhite && currentHasWhite) applyEntry(palette.colors[0], sorted[0]);
-          if (palette.hasBlack && currentHasBlack) applyEntry(palette.colors[palette.colors.length - 1], sorted[sorted.length - 1]);
-          savedNormals.forEach((saved, index) => {
-            if (index >= currentNormals.length) return;
-            applyEntry(saved, currentNormals[index]);
-          });
-        } else {
-          palette.colors.forEach((saved, index) => {
-            if (index >= sorted.length) return;
-            applyEntry(saved, sorted[index]);
-          });
-        }
-        renderSwapControls();
-        recolorSprite();
-        showToast(spriteToast, `Loaded "${palette.name}".`);
-      } catch {
-        showToast(spriteToast, "Failed to load palette.");
-      }
-      return;
-    }
-
-    const deleteBtn = event.target.closest(".delete-palette-btn");
-    if (deleteBtn) {
-      const id = Number(deleteBtn.dataset.paletteId);
-      try {
-        await deletePaletteById(id);
-        await refreshSavedPalettesList();
-        showToast(spriteToast, "Palette deleted.");
-      } catch {
-        showToast(spriteToast, "Failed to delete palette.");
-      }
-    }
-  });
-
-  exportPalettesBtn.addEventListener("click", async () => {
-    try {
-      const json = await exportPalettesJson();
-      const blob = new Blob([json], { type: "application/json" });
-      const objectUrl = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = objectUrl;
-      link.download = "retrocolorlab-palettes.json";
-      link.style.display = "none";
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(objectUrl);
-      showToast(spriteToast, "Palettes exported.");
-    } catch {
-      showToast(spriteToast, "Export failed.");
-    }
-  });
-
-  importPaletteFileBtn.addEventListener("click", () => {
+  importPaletteFileBtn?.addEventListener("click", () => {
     if (!originalImageData || mappings.length === 0) {
       showToast(spriteToast, "Upload a sprite first.");
       return;
@@ -792,7 +787,7 @@ function initSpriteRecolorer() {
   let pendingImportText = null;
   let pendingImportFilename = null;
 
-  importPaletteFileInput.addEventListener("change", () => {
+  importPaletteFileInput?.addEventListener("change", () => {
     const file = importPaletteFileInput.files[0];
     if (!file) return;
     importPaletteFileInput.value = "";
@@ -829,30 +824,10 @@ function initSpriteRecolorer() {
     pendingImportFilename = null;
   });
 
-  importPalettesBtn.addEventListener("click", () => importPalettesInput.click());
-
-  importPalettesInput.addEventListener("change", async () => {
-    const file = importPalettesInput.files[0];
-    if (!file) return;
-    importPalettesInput.value = "";
-    const reader = new FileReader();
-    reader.onload = async event => {
-      try {
-        const count = await importPalettesJson(event.target.result);
-        await refreshSavedPalettesList();
-        showToast(spriteToast, `Imported ${count} palette${count === 1 ? "" : "s"}.`);
-      } catch {
-        showToast(spriteToast, "Import failed. Invalid JSON.");
-      }
-    };
-    reader.readAsText(file);
-  });
-
   originalCanvas.style.display = "none";
   previewCanvas.style.display = "none";
-  setPaletteFileEditable(false);
+  setPaletteFileEditable(true);
   updatePaletteFilePreview();
-  refreshSavedPalettesList();
 
   return { setPaletteFileFormat };
 }

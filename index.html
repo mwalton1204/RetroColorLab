@@ -20,7 +20,8 @@
       </a>
       <nav class="nav" aria-label="Primary navigation">
         <a href="#converter">Converter</a>
-        <a href="#sprite">Sprite Recolor</a>
+        <a href="#sprite">Sprite Lab</a>
+        <a href="#palette-builder">Palette Builder</a>
       </nav>
     </div>
   </header>
@@ -37,29 +38,53 @@
     <section id="converter" class="panel">
       <div class="section-head">
         <div>
-          <h2>Palette converter</h2>
-          <p class="section-copy">Convert a single color between RGB555, RGB888, RGB565, RGB444, and HEX. Use the color picker or type a value directly.</p>
+          <h2>Color Format Converter</h2>
+          <p class="section-copy">Convert colors between RGB555, RGB888, RGB565, RGB444, and HEX formats.</p>
         </div>
       </div>
 
       <div class="converter-card">
         <div class="field-stack">
           <div class="converter-io-row">
-            <div>
-              <label for="input">Input</label>
+            <div class="converter-field">
+              <div class="converter-field-head">
+                <label for="input">Input</label>
+                <div class="format-menu converter-field-format" data-format-menu="input">
+                  <button id="inputFormatButton" class="format-menu-button" type="button" aria-haspopup="listbox" aria-expanded="false">RGB888</button>
+                  <div id="inputFormatMenu" class="format-menu-list" role="listbox" aria-label="Input format">
+                    <button type="button" role="option" aria-selected="true" data-value="RGB888" class="active">RGB888</button>
+                    <button type="button" role="option" aria-selected="false" data-value="RGB555">RGB555</button>
+                    <button type="button" role="option" aria-selected="false" data-value="RGB565">RGB565</button>
+                    <button type="button" role="option" aria-selected="false" data-value="RGB444">RGB444</button>
+                    <button type="button" role="option" aria-selected="false" data-value="HEX">HEX</button>
+                  </div>
+                </div>
+              </div>
               <div class="input-picker-wrap">
-                <textarea id="input" spellcheck="false" placeholder="EX: RGB 099, 181, 206"></textarea>
+                <input id="input" class="converter-value" type="text" spellcheck="false" autocomplete="off" placeholder="EX: RGB 099, 181, 206" />
                 <div id="colorPicker" class="pickr-anchor input-picker-inline" aria-label="Pick color"></div>
               </div>
             </div>
 
             <div class="converter-arrow" aria-hidden="true">→</div>
 
-            <div>
-              <label for="convertedOutput">Output</label>
+            <div class="converter-field">
+              <div class="converter-field-head">
+                <label for="convertedOutput">Output</label>
+                <div class="format-menu converter-field-format" data-format-menu="output">
+                  <button id="outputFormatButton" class="format-menu-button" type="button" aria-haspopup="listbox" aria-expanded="false">RGB555</button>
+                  <div id="outputFormatMenu" class="format-menu-list" role="listbox" aria-label="Output format">
+                    <button type="button" role="option" aria-selected="true" data-value="RGB555" class="active">RGB555</button>
+                    <button type="button" role="option" aria-selected="false" data-value="RGB888">RGB888</button>
+                    <button type="button" role="option" aria-selected="false" data-value="RGB565">RGB565</button>
+                    <button type="button" role="option" aria-selected="false" data-value="RGB444">RGB444</button>
+                    <button type="button" role="option" aria-selected="false" data-value="HEX">HEX</button>
+                  </div>
+                </div>
+              </div>
               <div class="input-picker-wrap">
-                <textarea id="convertedOutput" spellcheck="false" readonly></textarea>
-                <button id="copyRgbBtn" class="output-copy-btn" type="button" aria-label="Copy output" title="Copy output">
+                <input id="convertedOutput" class="converter-value converter-output" type="text" spellcheck="false" readonly aria-readonly="true" />
+                <button id="copyRgbBtn" class="output-copy-btn" type="button" aria-label="Copy output" title="Copy output" disabled>
                   <span class="material-symbols-rounded">content_copy</span>
                 </button>
               </div>
@@ -69,33 +94,8 @@
           <p id="error" class="error" role="alert"></p>
 
           <div class="controls converter-bottom-controls">
-            <button id="clearPaletteBtn" class="secondary" type="button">Clear</button>
-
-            <div class="converter-selects" aria-label="Conversion formats">
-              <div class="format-menu" data-format-menu="input">
-                <span class="converter-select-label">In</span>
-                <button id="inputFormatButton" class="format-menu-button" type="button" aria-haspopup="listbox" aria-expanded="false">RGB888</button>
-                <div id="inputFormatMenu" class="format-menu-list" role="listbox" aria-label="Input format">
-                  <button type="button" role="option" data-value="RGB888" class="active">RGB888</button>
-                  <button type="button" role="option" data-value="RGB555">RGB555</button>
-                  <button type="button" role="option" data-value="RGB565">RGB565</button>
-                  <button type="button" role="option" data-value="RGB444">RGB444</button>
-                  <button type="button" role="option" data-value="HEX">HEX</button>
-                </div>
-              </div>
-
-              <div class="format-menu" data-format-menu="output">
-                <span class="converter-select-label">Out</span>
-                <button id="outputFormatButton" class="format-menu-button" type="button" aria-haspopup="listbox" aria-expanded="false">RGB555</button>
-                <div id="outputFormatMenu" class="format-menu-list" role="listbox" aria-label="Output format">
-                  <button type="button" role="option" data-value="RGB555" class="active">RGB555</button>
-                  <button type="button" role="option" data-value="RGB888">RGB888</button>
-                  <button type="button" role="option" data-value="RGB565">RGB565</button>
-                  <button type="button" role="option" data-value="RGB444">RGB444</button>
-                  <button type="button" role="option" data-value="HEX">HEX</button>
-                </div>
-              </div>
-            </div>
+            <button id="clearPaletteBtn" class="secondary" type="button" disabled>Clear</button>
+            <button id="addToPaletteBtn" type="button" disabled>Add to palette</button>
           </div>
 
           <p id="paletteToast" class="toast" aria-live="polite"></p>
@@ -106,7 +106,7 @@
     <section id="sprite" class="panel">
       <div class="section-head sprite-head">
         <div>
-          <h2>Sprite recolor</h2>
+          <h2>Sprite Lab</h2>
           <p class="section-copy">Upload a sprite image. Colors are detected automatically — swap them with the pickers, then export palette files in JASC, GIMP, or plain-text formats.</p>
         </div>
       </div>
@@ -144,63 +144,44 @@
 
           <div class="swap-card">
             <div class="swap-head">
-              <h3>Color Picker</h3>
+              <h3>Color Manager</h3>
               <button id="resetSwapColorsBtn" class="swap-reset-btn reset-all-btn" type="button" aria-label="Reset all colors" title="Reset all colors">
                 <span class="material-symbols-rounded">restart_alt</span>
                 <span>Reset All</span>
               </button>
             </div>
             <div id="swapList" class="swap-list"></div>
-          </div>
-
-          <div class="palette-file-preview">
-            <div class="palette-file-head">
-              <h3>Palette Manager</h3>
-              <div class="palette-file-button-row">
-                <button id="importPaletteFileBtn" class="preview-download-btn" type="button" aria-label="Import palette file" title="Import palette file (.pal, .gpl, .txt)">
-                  <span class="material-symbols-rounded">upload_file</span>
-                </button>
-                <button id="editPaletteFileBtn" class="preview-download-btn" type="button" aria-label="Edit palette file text" title="Edit palette file text" aria-pressed="false">
-                  <span class="material-symbols-rounded">edit</span>
-                </button>
-                <button id="downloadPaletteFileBtn" class="preview-download-btn" type="button" aria-label="Download palette file" title="Download palette file">
-                  <span class="material-symbols-rounded">download</span>
-                </button>
-                <button id="copyPaletteFileBtn" class="preview-download-btn" type="button" aria-label="Copy palette file text" title="Copy palette file text">
-                  <span class="material-symbols-rounded">content_copy</span>
-                </button>
+            <details class="palette-manager-disclosure">
+              <summary>
+                <span>Raw Palette Data</span>
+                <span class="material-symbols-rounded palette-manager-chevron" aria-hidden="true">expand_more</span>
+              </summary>
+              <div class="palette-manager-content">
+                <textarea id="paletteFileText" class="palette-file-text is-editable" spellcheck="false">No sprite uploaded.</textarea>
+                <div class="palette-file-actions">
+                  <label class="palette-setting palette-setting-toggle">
+                    <input id="excludeBlackWhiteToggle" type="checkbox" />
+                    <span>Exclude B/W</span>
+                  </label>
+                </div>
               </div>
+            </details>
+            <div class="swap-card-actions">
+              <button id="importSavedPaletteBtn" class="secondary" type="button" disabled>
+                <span class="material-symbols-rounded" aria-hidden="true">palette</span>
+                <span>Load Palette</span>
+              </button>
+              <button id="saveSpritePaletteBtn" class="secondary" type="button" disabled>
+                <span class="material-symbols-rounded" aria-hidden="true">bookmark_add</span>
+                <span>Save as Palette</span>
+              </button>
+              <button id="copyPaletteFileBtn" class="secondary swap-card-icon-action" type="button" aria-label="Copy palette text" title="Copy palette text" disabled>
+                <span class="material-symbols-rounded" aria-hidden="true">content_copy</span>
+              </button>
+              <button id="downloadPaletteFileBtn" class="secondary swap-card-icon-action" type="button" aria-label="Download current palette" title="Download current palette" disabled>
+                <span class="material-symbols-rounded" aria-hidden="true">download</span>
+              </button>
             </div>
-
-            <textarea id="paletteFileText" class="palette-file-text" spellcheck="false" readonly>No sprite uploaded.</textarea>
-
-            <div class="palette-file-actions">
-              <label class="palette-setting palette-setting-toggle">
-                <input id="excludeBlackWhiteToggle" type="checkbox" />
-                <span>Exclude B/W</span>
-              </label>
-            </div>
-          </div>
-
-          <div class="saved-palettes-card workspace-card">
-            <div class="saved-palettes-head">
-              <h3>Saved Palettes</h3>
-              <div class="saved-palettes-io-btns">
-                <button id="importPalettesBtn" class="preview-download-btn" type="button" aria-label="Import palettes from JSON backup" title="Import palettes from JSON backup">
-                  <span class="material-symbols-rounded">upload_file</span>
-                </button>
-                <button id="exportPalettesBtn" class="preview-download-btn" type="button" aria-label="Export all palettes as JSON" title="Export all palettes as JSON">
-                  <span class="material-symbols-rounded">ios_share</span>
-                </button>
-              </div>
-            </div>
-            <div class="save-palette-row">
-              <input id="savePaletteName" type="text" class="save-palette-name-input" placeholder="Palette name…" aria-label="Palette name" maxlength="64" />
-              <button id="savePaletteBtn" type="button" class="save-palette-btn">Save</button>
-            </div>
-            <div id="savedPalettesList" class="saved-palettes-list"></div>
-            <input id="importPalettesInput" type="file" accept=".json" style="display:none" aria-hidden="true" tabindex="-1" />
-            <input id="importPaletteFileInput" type="file" accept=".pal,.gpl,.txt" style="display:none" aria-hidden="true" tabindex="-1" />
           </div>
 
           <p id="spriteToast" class="toast" aria-live="polite"></p>
@@ -214,7 +195,7 @@
                   <label>Original</label>
                   <span class="info-tip">
                     <span class="info-tip-icon material-symbols-rounded" aria-label="Picker tool help">info</span>
-                    <span class="info-tip-content">Hover to highlight &middot; Click to pin &middot; Esc to clear</span>
+                    <span class="info-tip-content">Hover and click to select area &middot; Esc to clear</span>
                   </span>
                 </span>
                 <span id="originalSize" class="canvas-size"></span>
@@ -253,6 +234,69 @@
       </div>
     </section>
 
+    <section id="palette-builder" class="panel">
+      <div class="section-head palette-builder-section-head">
+        <div>
+          <h2>Palette Manager</h2>
+          <p class="section-copy">Create, arrange, and save reusable palettes without uploading a sprite.</p>
+        </div>
+        <button id="newBuilderPaletteBtn" class="secondary" type="button">New palette</button>
+      </div>
+
+      <div class="palette-builder-layout">
+        <div class="palette-builder-main">
+          <div class="palette-builder-toolbar">
+            <div class="palette-builder-name-group">
+              <label for="builderPaletteName">Palette name</label>
+              <input id="builderPaletteName" class="builder-text-input" type="text" value="Untitled palette" maxlength="64" />
+            </div>
+            <div class="palette-builder-format-group">
+              <span class="field-label">Display format</span>
+              <div class="format-menu" data-format-menu="builder-display">
+                <button id="builderFormatButton" class="format-menu-button builder-format-button" type="button" aria-haspopup="listbox" aria-expanded="false">HEX</button>
+                <div id="builderFormatMenu" class="format-menu-list" role="listbox" aria-label="Palette display format">
+                  <button type="button" role="option" aria-selected="true" data-value="HEX" class="active">HEX</button>
+                  <button type="button" role="option" aria-selected="false" data-value="RGB888">RGB888</button>
+                  <button type="button" role="option" aria-selected="false" data-value="RGB555">RGB555</button>
+                  <button type="button" role="option" aria-selected="false" data-value="RGB565">RGB565</button>
+                  <button type="button" role="option" aria-selected="false" data-value="RGB444">RGB444</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="palette-builder-add-row">
+            <div id="builderColorPicker" class="pickr-anchor builder-color-picker" aria-label="Pick palette color"></div>
+            <label class="sr-only" for="builderColorInput">Color value</label>
+            <input id="builderColorInput" class="builder-text-input" type="text" value="#63B5CE" spellcheck="false" autocomplete="off" />
+            <button id="builderAddColorBtn" type="button">Add color</button>
+          </div>
+          <p id="builderError" class="builder-error" role="alert"></p>
+
+          <div class="palette-builder-list-head">
+            <h3>Colors</h3>
+            <span id="builderColorCount" class="working-palette-count">0 colors</span>
+          </div>
+          <div id="builderColorList" class="palette-builder-color-list"></div>
+
+          <div class="palette-builder-actions">
+            <button id="saveBuilderPaletteBtn" type="button">Save palette</button>
+            <button id="copyBuilderPaletteBtn" class="secondary" type="button" disabled>Copy palette</button>
+            <button id="downloadBuilderPaletteBtn" class="secondary" type="button" disabled>Download .txt</button>
+          </div>
+          <p id="builderToast" class="toast" aria-live="polite"></p>
+        </div>
+
+        <aside class="workspace-card palette-builder-library">
+          <div class="palette-builder-library-head">
+            <h3>Saved palettes</h3>
+            <span class="material-symbols-rounded" aria-hidden="true">bookmarks</span>
+          </div>
+          <div id="builderSavedPalettes" class="saved-palettes-list"></div>
+        </aside>
+      </div>
+    </section>
+
     <p class="footer-note">RetroColorLab runs entirely in your browser. Uploaded images are never sent anywhere.</p>
     <p class="footer-note">&copy; 2026 Michael Walton — MIT License</p>
   </main>
@@ -272,6 +316,32 @@
     </div>
   </dialog>
 
+  <dialog id="saveSpritePaletteDialog" class="palette-format-dialog save-sprite-palette-dialog">
+    <form id="saveSpritePaletteForm" class="palette-format-dialog-inner" method="dialog">
+      <div>
+        <h3>Save as Palette</h3>
+        <p class="palette-format-dialog-label">Save the current recolored values to your palette library.</p>
+      </div>
+      <label for="saveSpritePaletteName">Palette name</label>
+      <input id="saveSpritePaletteName" class="builder-text-input" type="text" maxlength="64" required />
+      <div class="save-sprite-palette-actions">
+        <button id="cancelSaveSpritePaletteBtn" class="secondary" type="button">Cancel</button>
+        <button type="submit">Save palette</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="importSavedPaletteDialog" class="palette-format-dialog import-saved-palette-dialog">
+    <div class="palette-format-dialog-inner">
+      <div>
+        <h3>Load Palette</h3>
+        <p class="palette-format-dialog-label">Choose a saved palette to apply to this sprite.</p>
+      </div>
+      <div id="importSavedPaletteList" class="saved-palettes-list import-saved-palette-list"></div>
+      <button id="cancelImportSavedPaletteBtn" type="button" class="secondary palette-format-dialog-cancel">Cancel</button>
+    </div>
+  </dialog>
+
   <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <script src="js/palette-storage.js"></script>
@@ -281,6 +351,7 @@
   <script src="js/palette-export.js"></script>
   <script src="js/format-menus.js"></script>
   <script src="js/converter.js"></script>
+  <script src="js/palette-builder.js"></script>
   <script src="js/sprite-recolorer.js"></script>
   <script src="js/main.js"></script>
 </body>

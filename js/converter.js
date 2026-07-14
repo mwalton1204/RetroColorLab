@@ -1,8 +1,9 @@
-function initConverter() {
+function initConverter(onAddToPalette) {
   const input = document.getElementById("input");
   const output = document.getElementById("convertedOutput");
   const error = document.getElementById("error");
   const clearButton = document.getElementById("clearPaletteBtn");
+  const addToPaletteButton = document.getElementById("addToPaletteBtn");
   const copyButton = document.getElementById("copyRgbBtn");
   const inputFormatButton = document.getElementById("inputFormatButton");
   const outputFormatButton = document.getElementById("outputFormatButton");
@@ -21,6 +22,7 @@ function initConverter() {
   }
 
   function render() {
+    clearButton.disabled = !input.value.trim();
     try {
       const [color] = parsePalette(input.value, inputFormat);
       error.style.display = "none";
@@ -28,16 +30,22 @@ function initConverter() {
 
       if (!color) {
         output.value = "";
+        copyButton.disabled = true;
+        addToPaletteButton.disabled = true;
         return;
       }
 
       output.value = formatOutput(color, outputFormat);
+      copyButton.disabled = false;
+      addToPaletteButton.disabled = false;
       if (pickr && pickedColorHex.toUpperCase() !== color.hex.toUpperCase()) {
         pickedColorHex = color.hex;
         pickr.setColor(color.hex, true);
       }
     } catch (err) {
       output.value = "";
+      copyButton.disabled = true;
+      addToPaletteButton.disabled = true;
       error.style.display = "block";
       error.textContent = err.message;
     }
@@ -45,11 +53,20 @@ function initConverter() {
 
   function setFormat(type, value, label = value) {
     if (type === "input") {
+      let color = null;
+      try {
+        [color] = parsePalette(input.value, inputFormat);
+      } catch (_) {
+        // Keep invalid text in place so the user can correct it in the new format.
+      }
       inputFormat = value;
       inputFormatButton.textContent = label;
-      inputFormatMenu.querySelectorAll("button").forEach(btn => btn.classList.toggle("active", btn.dataset.value === value));
-      input.value = "";
-      output.value = "";
+      inputFormatMenu.querySelectorAll("button").forEach(btn => {
+        const selected = btn.dataset.value === value;
+        btn.classList.toggle("active", selected);
+        btn.setAttribute("aria-selected", String(selected));
+      });
+      if (color) input.value = formatOutput(color, inputFormat);
       updatePlaceholder();
       error.style.display = "none";
       error.textContent = "";
@@ -60,7 +77,11 @@ function initConverter() {
     if (type === "output") {
       outputFormat = value;
       outputFormatButton.textContent = label;
-      outputFormatMenu.querySelectorAll("button").forEach(btn => btn.classList.toggle("active", btn.dataset.value === value));
+      outputFormatMenu.querySelectorAll("button").forEach(btn => {
+        const selected = btn.dataset.value === value;
+        btn.classList.toggle("active", selected);
+        btn.setAttribute("aria-selected", String(selected));
+      });
       render();
     }
   }
@@ -80,6 +101,17 @@ function initConverter() {
     if (!output.value.trim()) return;
     await copyText(output.value);
     showToast(toast, "Output copied.");
+  });
+  addToPaletteButton.addEventListener("click", () => {
+    let color;
+    try {
+      [color] = parsePalette(input.value, inputFormat);
+    } catch (_) {
+      return;
+    }
+    if (!color) return;
+    onAddToPalette?.(color.hex);
+    showToast(toast, `${formatOutput(color, outputFormat)} added to Palette Builder.`);
   });
 
   pickr = createPickr(pickerEl, pickedColorHex, hex => {

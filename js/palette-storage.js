@@ -16,7 +16,7 @@ function openPaletteDb() {
   });
 }
 
-async function savePalette(name, colors, hasWhite = false, hasBlack = false) {
+async function savePalette(name, colors, hasWhite = false, hasBlack = false, metadata = {}) {
   const db = await openPaletteDb();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(PALETTE_STORE, "readwrite");
@@ -26,7 +26,27 @@ async function savePalette(name, colors, hasWhite = false, hasBlack = false) {
       savedAt: new Date().toISOString(),
       colors,
       hasWhite,
-      hasBlack
+      hasBlack,
+      ...metadata
+    });
+    request.onsuccess = event => resolve(event.target.result);
+    request.onerror = event => reject(event.target.error);
+  });
+}
+
+async function updatePalette(id, name, colors, hasWhite = false, hasBlack = false, metadata = {}) {
+  const db = await openPaletteDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(PALETTE_STORE, "readwrite");
+    const store = tx.objectStore(PALETTE_STORE);
+    const request = store.put({
+      id: Number(id),
+      name: String(name || "Unnamed Palette").trim(),
+      savedAt: new Date().toISOString(),
+      colors,
+      hasWhite,
+      hasBlack,
+      ...metadata
     });
     request.onsuccess = event => resolve(event.target.result);
     request.onerror = event => reject(event.target.error);
