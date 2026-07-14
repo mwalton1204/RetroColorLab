@@ -8,8 +8,6 @@ It is designed for pixel artists, retro game developers, and ROM hackers working
 
 **[Live demo →](https://mwalton1204.github.io/RetroColorLab/)**
 
-<img src="assets/screenshot.png" alt="RetroColorLab interface" />
-
 ---
 
 ## Project highlights
@@ -26,6 +24,8 @@ It is designed for pixel artists, retro game developers, and ROM hackers working
 
 ### Color Format Converter
 
+<img src="assets/ConverterScreenshot.png" alt="RetroColorLab Color Format Converter" />
+
 - Convert individual colors between **RGB888, RGB555, RGB565, RGB444, and HEX**
 - Choose input and output formats independently
 - Enter a value manually or use the integrated color picker
@@ -33,6 +33,8 @@ It is designed for pixel artists, retro game developers, and ROM hackers working
 - Send the current color directly to the Palette Manager
 
 ### Sprite Lab
+
+<img src="assets/SpriteLabScreenshot.png" alt="RetroColorLab Sprite Lab showing color controls and original and recolored sprite previews" />
 
 - Upload or drag and drop PNG, JPEG, WebP, and GIF images
 - Detect every unique non-transparent color automatically
