@@ -4,17 +4,19 @@
 
 function initSpriteRecolorer() {
   const spriteUpload = document.getElementById("spriteUpload");
+  const spriteFileName = document.getElementById("spriteFileName");
+  const spriteEmptyUpload = document.getElementById("spriteEmptyUpload");
+  const spriteWorkbench = document.getElementById("spriteWorkbench");
   const clearSpriteBtn = document.getElementById("clearSpriteBtn");
   const zoomButtons = document.querySelectorAll(".zoom-btn");
   const resetSwapColorsBtn = document.getElementById("resetSwapColorsBtn");
   const convertGrayscaleBtn = document.getElementById("convertGrayscaleBtn");
   const swapList = document.getElementById("swapList");
+  const colorManagerCard = document.getElementById("colorManagerCard");
   const originalCanvas = document.getElementById("originalCanvas");
   const previewCanvas = document.getElementById("previewCanvas");
   const originalEmpty = document.getElementById("originalEmpty");
   const previewEmpty = document.getElementById("previewEmpty");
-  const originalSize = document.getElementById("originalSize");
-  const previewSize = document.getElementById("previewSize");
   const downloadSpriteBtn = document.getElementById("downloadSpriteBtn");
   const downloadIndexedBtn = document.getElementById("downloadIndexedBtn");
   const spriteToast = document.getElementById("spriteToast");
@@ -24,7 +26,6 @@ function initSpriteRecolorer() {
   const copyPaletteFileBtn = document.getElementById("copyPaletteFileBtn");
   const downloadPaletteFileBtn = document.getElementById("downloadPaletteFileBtn");
   const editPaletteFileBtn = document.getElementById("editPaletteFileBtn");
-  const excludeBlackWhiteToggle = document.getElementById("excludeBlackWhiteToggle");
   const saveSpritePaletteBtn = document.getElementById("saveSpritePaletteBtn");
   const importSavedPaletteBtn = document.getElementById("importSavedPaletteBtn");
   const importSavedPaletteDialog = document.getElementById("importSavedPaletteDialog");
@@ -47,7 +48,7 @@ function initSpriteRecolorer() {
   let spriteColors = [];
   let mappings = [];
   let names = [];
-  let paletteFileFormat = "palettes/jasc.pal";
+  let paletteFileFormat = "palettes/rgb888.txt";
   let isApplyingPaletteText = false;
   let palettePreviewApplyTimer = 0;
   let isPaletteFileEditable = false;
@@ -58,7 +59,7 @@ function initSpriteRecolorer() {
   let currentSpriteName = "Sprite";
 
   function includeBlackWhite() {
-    return !excludeBlackWhiteToggle.checked;
+    return true;
   }
 
   function getPixelMappingId(event) {
@@ -135,13 +136,20 @@ function initSpriteRecolorer() {
 
     if (!originalImageData || mappings.length === 0) {
       paletteFileText.value = "No sprite uploaded.";
+      resizePaletteTextArea();
       isApplyingPaletteText = false;
       return;
     }
 
     const files = getFiles();
     paletteFileText.value = files[paletteFileFormat] || "";
+    resizePaletteTextArea();
     isApplyingPaletteText = false;
+  }
+
+  function resizePaletteTextArea() {
+    paletteFileText.style.height = "auto";
+    paletteFileText.style.height = `${Math.min(240, Math.max(110, paletteFileText.scrollHeight))}px`;
   }
 
   function renderSwapControls() {
@@ -155,26 +163,19 @@ function initSpriteRecolorer() {
       row.dataset.mappingId = mapping.id;
       row.style.setProperty("--replacement-color", mapping.replacementHex);
       row.innerHTML = `
-        <div class="swap-map">
-          <span class="swap-drag-handle material-symbols-rounded" draggable="true" data-drag-mapping-id="${mapping.id}" aria-label="Drag to reorder color" title="Drag to reorder">drag_indicator</span>
-          <div class="editable-color">
-            <div class="pickr-anchor swap-pickr"></div>
-          </div>
-          <button class="swap-reset-btn" type="button" aria-label="Reset this color" title="Reset this color" data-reset-mapping-id="${mapping.id}">
-            <span class="material-symbols-rounded">restart_alt</span>
-          </button>
+        <span class="swap-drag-handle material-symbols-rounded" draggable="true" data-drag-mapping-id="${mapping.id}" aria-label="Drag to reorder color" title="Drag to reorder">drag_indicator</span>
+        <div class="editable-color">
+          <div class="pickr-anchor swap-pickr"></div>
         </div>
-        <div class="swap-editor" data-mapping-id="${mapping.id}">
-          <input
-            aria-label="Color ${mapping.id} name"
-            class="swap-editor-field"
-            value="${escapeHtml(names[originalIndex] || getDefaultColorName(mapping, mappings))}"
-            data-color-name-index="${originalIndex}"
-          />
-          <button class="copy-color-btn inline-copy-btn" type="button" aria-label="Copy color name" title="Copy color name" data-color-name-index="${originalIndex}">
-            <span class="material-symbols-rounded">content_copy</span>
-          </button>
-        </div>
+        <input
+          aria-label="Color ${mapping.id} name"
+          class="swap-editor-field"
+          value="${escapeHtml(names[originalIndex] || getDefaultColorName(mapping, mappings))}"
+          data-color-name-index="${originalIndex}"
+        />
+        <button class="swap-reset-btn" type="button" aria-label="Reset this color" title="Reset this color" data-reset-mapping-id="${mapping.id}">
+          <span class="material-symbols-rounded">restart_alt</span>
+        </button>
       `;
       swapList.appendChild(row);
 
@@ -191,10 +192,27 @@ function initSpriteRecolorer() {
   }
 
   function applySpriteZoom() {
-    originalCanvas.style.width = originalImageData ? `${originalImageData.width * spriteZoom}px` : "";
-    originalCanvas.style.height = originalImageData ? `${originalImageData.height * spriteZoom}px` : "";
-    previewCanvas.style.width = originalImageData ? `${originalImageData.width * spriteZoom}px` : "";
-    previewCanvas.style.height = originalImageData ? `${originalImageData.height * spriteZoom}px` : "";
+    if (!originalImageData) {
+      originalCanvas.style.width = "";
+      originalCanvas.style.height = "";
+      previewCanvas.style.width = "";
+      previewCanvas.style.height = "";
+      return;
+    }
+
+    let scale = spriteZoom;
+    if (spriteZoom === "fit") {
+      const boxes = [originalCanvas.parentElement, previewCanvas.parentElement];
+      const availableWidth = Math.min(...boxes.map(box => Math.max(1, box.clientWidth - 24)));
+      const availableHeight = Math.min(...boxes.map(box => Math.max(1, box.clientHeight - 24)));
+      const maximumScale = Math.min(availableWidth / originalImageData.width, availableHeight / originalImageData.height);
+      scale = Math.max(1, Math.min(8, Math.floor(maximumScale)));
+    }
+
+    originalCanvas.style.width = `${originalImageData.width * scale}px`;
+    originalCanvas.style.height = `${originalImageData.height * scale}px`;
+    previewCanvas.style.width = `${originalImageData.width * scale}px`;
+    previewCanvas.style.height = `${originalImageData.height * scale}px`;
   }
 
   function recolorSprite() {
@@ -227,7 +245,6 @@ function initSpriteRecolorer() {
     applySpriteZoom();
     previewEmpty.style.display = "none";
     previewCanvas.style.display = "block";
-    previewSize.textContent = `${imageData.width}×${imageData.height}`;
     updatePaletteFilePreview();
   }
 
@@ -262,6 +279,7 @@ function initSpriteRecolorer() {
         spriteColors = Array.from(colorMap.values()).sort((a, b) => b.count - a.count);
         mappings = buildMappings(spriteColors);
         currentSpriteName = file.name.replace(/\.[^.]+$/, "") || "Sprite";
+        spriteFileName.textContent = file.name;
         names = mappings.map(mapping => getDefaultColorName(mapping, mappings));
         hoveredMappingId = null;
         pinnedMappingId = null;
@@ -270,9 +288,11 @@ function initSpriteRecolorer() {
         originalEmpty.style.display = "none";
         originalCanvas.style.display = "block";
         originalCanvas.classList.add("is-picking");
-        originalSize.textContent = `${img.width}×${img.height}`;
         applySpriteZoom();
         setPaletteFileEditable(true);
+        colorManagerCard.hidden = false;
+        spriteEmptyUpload.hidden = true;
+        spriteWorkbench.hidden = false;
         renderSwapControls();
         recolorSprite();
         saveSpritePaletteBtn.disabled = false;
@@ -287,6 +307,7 @@ function initSpriteRecolorer() {
 
   function clearSprite() {
     spriteUpload.value = "";
+    spriteFileName.textContent = "No file selected";
     originalImageData = null;
     spriteColors = [];
     mappings = [];
@@ -307,14 +328,17 @@ function initSpriteRecolorer() {
     hoveredMappingId = null;
     pinnedMappingId = null;
     draggedMappingId = null;
+    spriteZoom = 1;
+    zoomButtons.forEach(button => button.classList.toggle("active", button.dataset.zoom === "1"));
     originalCanvas.style.display = "none";
     originalCanvas.classList.remove("is-picking");
     previewCanvas.style.display = "none";
     originalEmpty.style.display = "grid";
     previewEmpty.style.display = "grid";
-    originalSize.textContent = "";
-    previewSize.textContent = "";
     swapList.innerHTML = "";
+    colorManagerCard.hidden = true;
+    spriteWorkbench.hidden = true;
+    spriteEmptyUpload.hidden = false;
     setPaletteFileEditable(true);
     updatePaletteFilePreview();
     showToast(spriteToast, "Image cleared.");
@@ -381,11 +405,38 @@ function initSpriteRecolorer() {
 
   spriteUpload.addEventListener("click", () => {
     spriteUpload.value = "";
+    spriteFileName.textContent = "No file selected";
   });
 
   spriteUpload.addEventListener("change", () => {
     const file = spriteUpload.files[0];
     if (file) loadSprite(file);
+  });
+
+  function handleDroppedSprite(file) {
+    if (!file?.type?.startsWith("image/")) {
+      showToast(spriteToast, "Choose a supported image file.");
+      return;
+    }
+    loadSprite(file);
+  }
+
+  spriteEmptyUpload.addEventListener("dragenter", event => {
+    event.preventDefault();
+    spriteEmptyUpload.classList.add("is-dragging");
+  });
+  spriteEmptyUpload.addEventListener("dragover", event => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+    spriteEmptyUpload.classList.add("is-dragging");
+  });
+  spriteEmptyUpload.addEventListener("dragleave", event => {
+    if (!spriteEmptyUpload.contains(event.relatedTarget)) spriteEmptyUpload.classList.remove("is-dragging");
+  });
+  spriteEmptyUpload.addEventListener("drop", event => {
+    event.preventDefault();
+    spriteEmptyUpload.classList.remove("is-dragging");
+    handleDroppedSprite(event.dataTransfer.files?.[0]);
   });
 
   clearSpriteBtn.addEventListener("click", clearSprite);
@@ -403,12 +454,6 @@ function initSpriteRecolorer() {
       return;
     }
 
-    const copyButton = event.target.closest(".copy-color-btn");
-    if (!copyButton) return;
-    const index = Number.parseInt(copyButton.dataset.colorNameIndex, 10);
-    if (Number.isNaN(index)) return;
-    await copyText(names[index] || `Color ${index + 1}`);
-    showToast(spriteToast, "Color name copied.");
   });
 
   swapList.addEventListener("dragstart", event => {
@@ -474,10 +519,13 @@ function initSpriteRecolorer() {
 
   zoomButtons.forEach(button => {
     button.addEventListener("click", () => {
-      spriteZoom = Number(button.dataset.zoom);
+      spriteZoom = button.dataset.zoom === "fit" ? "fit" : Number(button.dataset.zoom);
       zoomButtons.forEach(btn => btn.classList.toggle("active", btn === button));
       applySpriteZoom();
     });
+  });
+  window.addEventListener("resize", () => {
+    if (spriteZoom === "fit") applySpriteZoom();
   });
 
   resetSwapColorsBtn.addEventListener("click", () => {
@@ -512,7 +560,7 @@ function initSpriteRecolorer() {
     }
 
     try {
-      const fileBase = spriteUpload.files?.[0]?.name?.replace(/\.[^.]+$/, "") || "recolored-sprite";
+      const fileBase = sanitizeFileName(currentSpriteName || "recolored-sprite");
       const link = document.createElement("a");
       link.download = `${fileBase}-recolored.png`;
       link.href = previewCanvas.toDataURL("image/png");
@@ -526,7 +574,7 @@ function initSpriteRecolorer() {
     }
   });
 
-  downloadIndexedBtn.addEventListener("click", async () => {
+  downloadIndexedBtn?.addEventListener("click", async () => {
     if (!originalImageData || mappings.length === 0) {
       showToast(spriteToast, "Upload a sprite first.");
       return;
@@ -624,9 +672,8 @@ function initSpriteRecolorer() {
 
   editPaletteFileBtn?.addEventListener("click", () => setPaletteFileEditable(!isPaletteFileEditable));
 
-  excludeBlackWhiteToggle.addEventListener("change", updatePaletteFilePreview);
-
   paletteFileText.addEventListener("input", () => {
+    resizePaletteTextArea();
     if (!isPaletteFileEditable) return;
     window.clearTimeout(palettePreviewApplyTimer);
     palettePreviewApplyTimer = window.setTimeout(applyPalettePreviewText, 250);

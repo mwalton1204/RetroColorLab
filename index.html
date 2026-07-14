@@ -111,75 +111,81 @@
         </div>
       </div>
 
-      <div class="sprite-workbench">
+      <div id="spriteEmptyUpload" class="sprite-empty-upload">
+        <span class="material-symbols-rounded sprite-empty-upload-icon" aria-hidden="true">image</span>
+        <div class="sprite-empty-upload-copy">
+          <h3>Upload a sprite image</h3>
+          <p>PNG, JPEG, WebP, or GIF · processed locally in your browser</p>
+        </div>
+        <label class="button-link sprite-empty-upload-button" for="spriteUpload">
+          <span class="material-symbols-rounded" aria-hidden="true">upload</span>
+          <span>Choose image</span>
+        </label>
+        <span class="sprite-empty-upload-drop">or drop an image here</span>
+      </div>
+
+      <div id="spriteWorkbench" class="sprite-workbench" hidden>
         <div class="sprite-left-stack">
           <aside class="workspace-card sprite-info-card">
-            <div class="upload-head">
-              <h3>Upload</h3>
+            <div class="sprite-controls">
+              <label class="sr-only" for="spriteUpload">Upload sprite</label>
+              <div class="sprite-file-control">
+                <label class="secondary sprite-file-button" for="spriteUpload">
+                  <span class="material-symbols-rounded" aria-hidden="true">image</span>
+                  <span>Upload Sprite</span>
+                </label>
+                <span id="spriteFileName" class="sprite-file-name">No file selected</span>
+                <input id="spriteUpload" class="sprite-file-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+              </div>
               <button id="clearSpriteBtn" class="upload-clear-btn" type="button" aria-label="Clear image" title="Clear image">
                 <span class="material-symbols-rounded">delete</span>
               </button>
             </div>
 
-            <div class="sprite-controls">
-              <label class="sr-only" for="spriteUpload">Upload sprite</label>
-              <input id="spriteUpload" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
-            </div>
-
-            <div class="sprite-format-section-inline">
-              <span class="sprite-format-label">Palette Format:</span>
-              <div class="format-menu sprite-format-menu" data-format-menu="palette-file">
-                <button id="paletteFileFormatButton" class="format-menu-button swap-format-inline" type="button" aria-haspopup="listbox" aria-expanded="false">JASC .pal</button>
-                <div id="paletteFileFormatMenu" class="format-menu-list" role="listbox" aria-label="Palette file format">
-                  <button type="button" role="option" data-value="palettes/jasc.pal" class="active">JASC .pal</button>
-                  <button type="button" role="option" data-value="palettes/gimp.gpl">GIMP .gpl</button>
-                  <button type="button" role="option" data-value="palettes/rgb888.txt">RGB888 .txt</button>
-                  <button type="button" role="option" data-value="palettes/rgb555.txt">RGB555 .txt</button>
-                  <button type="button" role="option" data-value="palettes/rgb565.txt">RGB565 .txt</button>
-                  <button type="button" role="option" data-value="palettes/rgb444.txt">RGB444 .txt</button>
-                </div>
-              </div>
-            </div>
           </aside>
 
-          <div class="swap-card">
+          <div id="colorManagerCard" class="swap-card" hidden>
             <div class="swap-head">
-              <h3>Color Manager</h3>
+              <div class="swap-head-title">
+                <h3>Color Manager</h3>
+              </div>
               <div class="swap-head-actions">
-                <button id="convertGrayscaleBtn" class="swap-reset-btn grayscale-all-btn" type="button" aria-label="Convert all colors to grayscale" title="Convert all colors to grayscale">
+                <button id="convertGrayscaleBtn" class="secondary swap-head-text-action" type="button" aria-label="Convert all colors to grayscale" title="Convert all colors to grayscale">
                   <span class="material-symbols-rounded">contrast</span>
                   <span>Grayscale</span>
                 </button>
-                <button id="resetSwapColorsBtn" class="swap-reset-btn reset-all-btn" type="button" aria-label="Reset all colors" title="Reset all colors">
+                <button id="resetSwapColorsBtn" class="secondary swap-head-text-action" type="button" aria-label="Reset all colors" title="Reset all colors">
                   <span class="material-symbols-rounded">restart_alt</span>
                   <span>Reset All</span>
                 </button>
               </div>
             </div>
             <div id="swapList" class="swap-list"></div>
-            <details class="palette-manager-disclosure">
-              <summary>
-                <span>Raw Palette Data</span>
-                <span class="material-symbols-rounded palette-manager-chevron" aria-hidden="true">expand_more</span>
-              </summary>
-              <div class="palette-manager-content">
-                <textarea id="paletteFileText" class="palette-file-text is-editable" spellcheck="false">No sprite uploaded.</textarea>
-                <div class="palette-file-actions">
-                  <label class="palette-setting palette-setting-toggle">
-                    <input id="excludeBlackWhiteToggle" type="checkbox" />
-                    <span>Exclude B/W</span>
-                  </label>
+            <div class="sprite-format-section-inline color-manager-output-format">
+              <span class="sprite-format-label">Palette Format:</span>
+              <div class="format-menu sprite-format-menu" data-format-menu="palette-file">
+                <button id="paletteFileFormatButton" class="format-menu-button swap-format-inline" type="button" aria-haspopup="listbox" aria-expanded="false">RGB888 (.txt)</button>
+                <div id="paletteFileFormatMenu" class="format-menu-list" role="listbox" aria-label="Palette output format">
+                  <button type="button" role="option" data-value="palettes/jasc.pal">JASC (.pal)</button>
+                  <button type="button" role="option" data-value="palettes/gimp.gpl">GIMP (.gpl)</button>
+                  <button type="button" role="option" data-value="palettes/rgb888.txt" class="active">RGB888 (.txt)</button>
+                  <button type="button" role="option" data-value="palettes/rgb555.txt">RGB555 (.txt)</button>
+                  <button type="button" role="option" data-value="palettes/rgb565.txt">RGB565 (.txt)</button>
+                  <button type="button" role="option" data-value="palettes/rgb444.txt">RGB444 (.txt)</button>
                 </div>
               </div>
-            </details>
+            </div>
+            <div class="palette-manager-content">
+              <textarea id="paletteFileText" class="palette-file-text is-editable" spellcheck="false">No sprite uploaded.</textarea>
+            </div>
             <div class="swap-card-actions">
-              <button id="importSavedPaletteBtn" class="secondary" type="button" disabled>
+              <button id="importSavedPaletteBtn" class="secondary palette-library-action" type="button" disabled>
                 <span class="material-symbols-rounded" aria-hidden="true">palette</span>
                 <span>Load Palette</span>
               </button>
-              <button id="saveSpritePaletteBtn" class="secondary" type="button" disabled>
+              <button id="saveSpritePaletteBtn" class="secondary palette-library-action" type="button" disabled>
                 <span class="material-symbols-rounded" aria-hidden="true">bookmark_add</span>
-                <span>Save as Palette</span>
+                <span>Save Palette</span>
               </button>
               <button id="copyPaletteFileBtn" class="secondary swap-card-icon-action" type="button" aria-label="Copy palette text" title="Copy palette text" disabled>
                 <span class="material-symbols-rounded" aria-hidden="true">content_copy</span>
@@ -193,7 +199,7 @@
           <p id="spriteToast" class="toast" aria-live="polite"></p>
         </div>
 
-        <div class="sprite-preview-stack">
+        <div class="sprite-preview-stack workspace-card preview-workspace-card">
           <div class="preview-grid">
             <div class="preview-panel">
               <div class="canvas-caption">
@@ -204,7 +210,6 @@
                     <span class="info-tip-content">Hover and click to select area &middot; Esc to clear</span>
                   </span>
                 </span>
-                <span id="originalSize" class="canvas-size"></span>
               </div>
               <div class="canvas-box">
                 <div id="originalEmpty" class="empty-state">Upload a sprite to get started.</div>
@@ -215,25 +220,25 @@
             <div class="preview-panel">
               <div class="canvas-caption">
                 <label>Recolored</label>
-                <div class="preview-actions">
-                  <span id="previewSize" class="canvas-size"></span>
-                  <button id="downloadSpriteBtn" class="preview-download-btn" type="button" aria-label="Download recolored PNG" title="Download recolored PNG">
-                    <span class="material-symbols-rounded">download</span>
-                  </button>
-                  <button id="downloadIndexedBtn" class="preview-download-btn" type="button" aria-label="Download index-map package" title="Download index map + palette (.zip)">
-                    <span class="material-symbols-rounded">inventory_2</span>
-                  </button>
-                </div>
               </div>
               <div class="canvas-box">
                 <div id="previewEmpty" class="empty-state">Recolored image appears here.</div>
                 <canvas id="previewCanvas"></canvas>
               </div>
-              <div class="zoom-controls" aria-label="Sprite magnification">
-                <button class="zoom-btn active" type="button" data-zoom="1">1×</button>
-                <button class="zoom-btn" type="button" data-zoom="2">2×</button>
-                <button class="zoom-btn" type="button" data-zoom="4">4×</button>
-              </div>
+            </div>
+          </div>
+          <div class="preview-workspace-footer">
+            <div class="preview-actions">
+              <button id="downloadSpriteBtn" class="preview-download-btn" type="button" aria-label="Download recolored PNG" title="Download recolored PNG">
+                <span class="material-symbols-rounded">download</span>
+                <span>Recolored PNG</span>
+              </button>
+            </div>
+            <div class="zoom-controls" aria-label="Sprite magnification">
+              <button class="zoom-btn active" type="button" data-zoom="1">1×</button>
+              <button class="zoom-btn" type="button" data-zoom="2">2×</button>
+              <button class="zoom-btn" type="button" data-zoom="4">4×</button>
+              <button class="zoom-btn" type="button" data-zoom="fit">Fit</button>
             </div>
           </div>
         </div>
