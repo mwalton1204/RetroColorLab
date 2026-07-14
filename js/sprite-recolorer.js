@@ -7,6 +7,7 @@ function initSpriteRecolorer() {
   const clearSpriteBtn = document.getElementById("clearSpriteBtn");
   const zoomButtons = document.querySelectorAll(".zoom-btn");
   const resetSwapColorsBtn = document.getElementById("resetSwapColorsBtn");
+  const convertGrayscaleBtn = document.getElementById("convertGrayscaleBtn");
   const swapList = document.getElementById("swapList");
   const originalCanvas = document.getElementById("originalCanvas");
   const previewCanvas = document.getElementById("previewCanvas");
@@ -119,6 +120,13 @@ function initSpriteRecolorer() {
 
   function getFiles() {
     return buildPaletteFiles(getRows());
+  }
+
+  function getPaletteExportFilename() {
+    const selectedName = paletteFileFormat.split("/").pop() || "palette.txt";
+    const extension = selectedName.split(".").pop() || "txt";
+    const formatSuffix = extension === "txt" ? `-${selectedName.replace(/\.txt$/i, "")}` : "";
+    return `${sanitizeFileName(currentSpriteName)}${formatSuffix}.${extension}`;
   }
 
   function updatePaletteFilePreview() {
@@ -312,12 +320,12 @@ function initSpriteRecolorer() {
     showToast(spriteToast, "Image cleared.");
   }
 
-  function getIndexedImageData() {
+  function getIndexedImageData(orderedMappings = getExportOrderedMappings(mappings, true)) {
     if (!originalImageData || mappings.length === 0) return null;
 
     const imageData = new ImageData(new Uint8ClampedArray(originalImageData.data), originalImageData.width, originalImageData.height);
-    const indexMap = new Map(mappings.map((mapping, index) => [mapping.key, index]));
-    const maxIndex = Math.max(1, mappings.length - 1);
+    const indexMap = new Map(orderedMappings.map((mapping, index) => [mapping.key, index]));
+    const maxIndex = Math.max(1, orderedMappings.length - 1);
 
     for (let i = 0; i < imageData.data.length; i += 4) {
       const a = imageData.data[i + 3];
@@ -481,6 +489,22 @@ function initSpriteRecolorer() {
     showToast(spriteToast, "Colors reset.");
   });
 
+  convertGrayscaleBtn.addEventListener("click", () => {
+    if (!originalImageData || mappings.length === 0) {
+      showToast(spriteToast, "Upload a sprite first.");
+      return;
+    }
+
+    mappings.forEach(mapping => {
+      const { r, g, b } = hexToRgb(mapping.replacementHex);
+      const value = Math.max(r, g, b);
+      mapping.replacementHex = toHex(value, value, value);
+    });
+    renderSwapControls();
+    recolorSprite();
+    showToast(spriteToast, "Palette converted to grayscale.");
+  });
+
   downloadSpriteBtn.addEventListener("click", () => {
     if (!originalImageData || previewCanvas.width === 0 || previewCanvas.height === 0) {
       showToast(spriteToast, "Upload a sprite first.");
@@ -514,7 +538,8 @@ function initSpriteRecolorer() {
     }
 
     try {
-      const indexedImageData = getIndexedImageData();
+      const orderedMappings = getExportOrderedMappings(mappings, true);
+      const indexedImageData = getIndexedImageData(orderedMappings);
       if (!indexedImageData) throw new Error("Indexed export failed.");
 
       const exportCanvas = document.createElement("canvas");
@@ -524,17 +549,47 @@ function initSpriteRecolorer() {
       exportCtx.putImageData(indexedImageData, 0, 0);
 
       const pngBlob = await canvasBlob(exportCanvas);
-      const fileBase = spriteUpload.files?.[0]?.name?.replace(/\.[^.]+$/, "") || "sprite";
-      const zip = new JSZip();
-      zip.file("images/indexed-grayscale.png", pngBlob);
+      const fileBase = sanitizeFileName(currentSpriteName);
+      const paletteRows = buildPaletteRows(mappings, names, true);
+      const paletteFiles = buildPaletteFiles(paletteRows);
+      const paletteFilename = getPaletteExportFilename();
+      const paletteContents = paletteFiles[paletteFileFormat];
+      if (paletteContents === undefined) throw new Error("Selected palette format could not be exported.");
 
-      Object.entries(getFiles()).forEach(([filename, contents]) => zip.file(filename, contents));
+      const mappingTable = orderedMappings.map((mapping, index) => {
+        const originalIndex = mappings.findIndex(item => item.id === mapping.id);
+        const grayscaleValue = orderedMappings.length <= 1 ? 0 : Math.round((index / (orderedMappings.length - 1)) * 255);
+        return {
+          paletteIndex: index,
+          grayscaleValue,
+          grayscaleHex: toHex(grayscaleValue, grayscaleValue, grayscaleValue),
+          sourceHex: mapping.source.hex,
+          replacementHex: mapping.replacementHex,
+          name: names[originalIndex] || getDefaultColorName(mapping, mappings)
+        };
+      });
+      const manifest = {
+        app: "RetroColorLab",
+        exportedAt: new Date().toISOString(),
+        image: `${fileBase}-index-map.png`,
+        palette: paletteFilename,
+        paletteFormat: paletteFileFormat,
+        colorCount: orderedMappings.length,
+        encoding: "grayscale-index-map",
+        indexFormula: "round(index / (colorCount - 1) * 255)",
+        note: "The PNG is an RGBA grayscale index map, not a PLTE-indexed PNG.",
+        mappings: mappingTable
+      };
+      const zip = new JSZip();
+      zip.file(`${fileBase}-index-map.png`, pngBlob);
+      zip.file(paletteFilename, paletteContents);
+      zip.file("manifest.json", JSON.stringify(manifest, null, 2));
 
       const zipBlob = await zip.generateAsync({ type: "blob" });
       const objectUrl = URL.createObjectURL(zipBlob);
       const link = document.createElement("a");
       link.href = objectUrl;
-      link.download = `${fileBase}-indexed-palette.zip`;
+      link.download = `${fileBase}-index-map.zip`;
       link.style.display = "none";
       document.body.appendChild(link);
       link.click();
@@ -548,14 +603,11 @@ function initSpriteRecolorer() {
 
   downloadPaletteFileBtn?.addEventListener("click", () => {
     if (!paletteFileText.value.trim() || paletteFileText.value === "No sprite uploaded.") return;
-    const selectedName = paletteFileFormat.split("/").pop() || "palette.txt";
-    const extension = selectedName.split(".").pop() || "txt";
-    const formatSuffix = extension === "txt" ? `-${selectedName.replace(/\.txt$/i, "")}` : "";
     const blob = new Blob([paletteFileText.value], { type: "text/plain;charset=utf-8" });
     const objectUrl = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = objectUrl;
-    link.download = `${sanitizeFileName(currentSpriteName)}${formatSuffix}.${extension}`;
+    link.download = getPaletteExportFilename();
     link.style.display = "none";
     document.body.appendChild(link);
     link.click();

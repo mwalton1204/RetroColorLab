@@ -35,15 +35,11 @@ Built for retro game developers, pixel artists, and ROM hackers working with con
 - Download, copy, or select the export format inline
 - Format selector: **JASC .pal**, **GIMP .gpl**, **RGB888 / RGB555 / RGB565 / RGB444 .txt**
 
-### Palette Export (ZIP package)
-- **JASC .pal** — Paintshop Pro / GraphicsGale
-- **GIMP .gpl** — GIMP palette format
-- **RGB888 / RGB555 / RGB565 / RGB444 .txt** — plain-text numeric formats
-- **HEX .txt** — one hex value per line
-- **map.csv** — full index-to-color mapping table with source, replacement, and name columns
-- **Indexed grayscale PNG** — a canvas-generated grayscale image where each pixel's brightness encodes its palette index, for use with external palette-mapping workflows
-- **manifest.json** — machine-readable export metadata
-- All files bundled into a ZIP via JSZip, generated entirely in the browser
+### Index-map Export (ZIP package)
+- **Grayscale index-map PNG** — each pixel's brightness encodes its palette position
+- **Current palette file** — exported in the selected JASC, GIMP, RGB888, RGB555, RGB565, or RGB444 format
+- **manifest.json** — documents the grayscale values and their source/replacement color mappings
+- The canvas-generated PNG is an RGBA grayscale index map, not a binary PLTE-indexed PNG
 
 ### Saved Palettes
 - Save the current replacement palette with a custom name, stored locally via **IndexedDB** — no account or server required
@@ -59,7 +55,7 @@ Built for retro game developers, pixel artists, and ROM hackers working with con
 - **Custom Pickr format fields.** The Pickr color picker normally only accepts hex input. A custom UI is injected into each picker instance after initialization, adding a format selector and text input that parses and applies any supported color format directly.
 - **Canvas-based color detection.** Sprite colors are extracted by reading raw `ImageData` pixel-by-pixel, keyed by RGB triplet, and deduplicated into a sorted palette. Recoloring applies a replacement map over the same `ImageData` in a single pass.
 - **Semantic black/white matching.** When loading a saved or imported palette, white and black source slots are matched by identity (not position), so they never receive incorrect replacements even when the palette counts differ between sprites.
-- **Client-side ZIP generation.** The indexed export package (PNG + all palette files) is assembled and zipped entirely in the browser using JSZip, then offered as a download via a temporary object URL.
+- **Client-side ZIP generation.** The index-map PNG, selected palette file, and mapping manifest are assembled entirely in the browser using JSZip.
 - **IndexedDB palette storage.** Saved palettes are persisted locally with IndexedDB. Each record stores the replacement colors, names, and flags indicating whether the palette included white/black entries, so loading onto a different sprite always aligns correctly.
 - **Zero data transmission.** Uploaded images are read with `FileReader` and processed locally. Nothing is sent to a server.
 

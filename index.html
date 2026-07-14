@@ -145,10 +145,16 @@
           <div class="swap-card">
             <div class="swap-head">
               <h3>Color Manager</h3>
-              <button id="resetSwapColorsBtn" class="swap-reset-btn reset-all-btn" type="button" aria-label="Reset all colors" title="Reset all colors">
-                <span class="material-symbols-rounded">restart_alt</span>
-                <span>Reset All</span>
-              </button>
+              <div class="swap-head-actions">
+                <button id="convertGrayscaleBtn" class="swap-reset-btn grayscale-all-btn" type="button" aria-label="Convert all colors to grayscale" title="Convert all colors to grayscale">
+                  <span class="material-symbols-rounded">contrast</span>
+                  <span>Grayscale</span>
+                </button>
+                <button id="resetSwapColorsBtn" class="swap-reset-btn reset-all-btn" type="button" aria-label="Reset all colors" title="Reset all colors">
+                  <span class="material-symbols-rounded">restart_alt</span>
+                  <span>Reset All</span>
+                </button>
+              </div>
             </div>
             <div id="swapList" class="swap-list"></div>
             <details class="palette-manager-disclosure">
@@ -214,7 +220,7 @@
                   <button id="downloadSpriteBtn" class="preview-download-btn" type="button" aria-label="Download recolored PNG" title="Download recolored PNG">
                     <span class="material-symbols-rounded">download</span>
                   </button>
-                  <button id="downloadIndexedBtn" class="preview-download-btn" type="button" aria-label="Download indexed package" title="Download indexed PNG + palette files">
+                  <button id="downloadIndexedBtn" class="preview-download-btn" type="button" aria-label="Download index-map package" title="Download index map + palette (.zip)">
                     <span class="material-symbols-rounded">inventory_2</span>
                   </button>
                 </div>
