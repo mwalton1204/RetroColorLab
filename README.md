@@ -1,109 +1,137 @@
 # RetroColorLab
 
-A browser-based toolkit for retro palette workflows. Convert color values between common formats, upload sprite images to detect and swap colors automatically, and export palette files ready for use in your editor. No server, no build step, no data sent anywhere.
+RetroColorLab is a client-side toolkit for the color workflows behind pixel art and retro games. It combines color-format conversion, reusable palette management, and real-time sprite recoloring in one focused interface.
 
-Built for retro game developers, pixel artists, and ROM hackers working with constrained-color systems like Game Boy Color, GBA, NES, and SNES.
+The project is built with vanilla JavaScript and the Canvas API. Images and palettes are processed locally, saved palettes persist in IndexedDB, and the application requires no account, backend, build step, or server-side image handling.
+
+It is designed for pixel artists, retro game developers, and ROM hackers working with constrained-color systems such as the Game Boy Color, GBA, NES, and SNES.
 
 **[Live demo →](https://mwalton1204.github.io/RetroColorLab/)**
 
-<img src="assets/screenshot.png" alt="RetroColorLab screenshot"/>
+<img src="assets/screenshot.png" alt="RetroColorLab interface" />
+
+---
+
+## Project highlights
+
+- **A complete browser-based workflow:** convert a color, add it to a reusable palette, apply that palette to a sprite, and export the result without leaving the page
+- **Purpose-built image processing:** unique sprite colors are detected from raw pixel data and recolored in real time through an efficient lookup-based canvas pass
+- **Pixel-art-aware previews:** zoom modes use integer scaling so artwork remains crisp and representative at every supported size
+- **Shared application state:** palettes created manually or extracted from sprites use the same IndexedDB-backed library and can move between tools
+- **Privacy by design:** uploaded artwork never leaves the browser
 
 ---
 
 ## Features
 
-### Palette Converter
-- Convert a single color between **RGB555, RGB888, RGB565, RGB444, and HEX**
-- Integrated color picker with custom format input fields injected directly into the Pickr UI — supports typing values in any supported format, not just hex
-- Input and output format selectable independently
+### Color Format Converter
 
-### Sprite Recolor
-- Upload any PNG, JPEG, WebP, or GIF image
-- All unique non-transparent colors are detected automatically via the Canvas API and mapped to individual color pickers
-- Swap any color in real time; preview updates instantly
-- **Swap two colors' positions** in the palette using the swap button on each row — also swaps the actual replacement colors on the sprite
-- Per-color name labels, editable inline
-- Reset any individual color or all colors at once
-- Hover over the original sprite to highlight the matching row in the swap list; click to pin the highlight; click again or press Esc to clear
-- 1×, 2×, 4× zoom for pixel-accurate inspection
+- Convert individual colors between **RGB888, RGB555, RGB565, RGB444, and HEX**
+- Choose input and output formats independently
+- Enter a value manually or use the integrated color picker
+- Copy the converted value with one click
+- Send the current color directly to the Palette Manager
+
+### Sprite Lab
+
+- Upload or drag and drop PNG, JPEG, WebP, and GIF images
+- Detect every unique non-transparent color automatically
+- Replace colors with individual color pickers and see the recolored sprite update immediately
+- Rename palette entries inline
+- Drag and drop colors to rearrange their palette order
+- Reset an individual color or the entire palette
+- Convert the complete working palette to grayscale with one click
+- Hover over the original sprite to highlight its matching color row; click to pin the selection and press Esc to clear it
+- Compare the original and recolored images side by side
+- Inspect pixel art at integer-only **1×, 2×, 4×, or Fit** scaling
+- Download the recolored image as a PNG
+
+### Sprite Palette Tools
+
+- View and edit the working palette as text; valid edits are applied back to the recolored sprite
+- Select **JASC (.pal), GIMP (.gpl), RGB888, RGB555, RGB565, or RGB444** palette output
+- Copy or download the current palette in the selected format
+- Save the current sprite palette to the shared local palette library, using the sprite filename as the suggested palette name
+- Load a saved palette from the library and apply it to the current sprite
+- Match white and black entries semantically when applying compatible saved palettes
 
 ### Palette Manager
-- Live preview of the exported palette file, updated as you make changes
-- Import a palette file (`.pal`, `.gpl`, `.txt`) to apply its colors to the current sprite; black and white slots are always matched semantically regardless of palette count
-- Edit mode: paste values directly into the preview text area to apply them back to the sprite
-- Exclude black and white from exports with a toggle
-- Download, copy, or select the export format inline
-- Format selector: **JASC .pal**, **GIMP .gpl**, **RGB888 / RGB555 / RGB565 / RGB444 .txt**
 
-### Index-map Export (ZIP package)
-- **Grayscale index-map PNG** — each pixel's brightness encodes its palette position
-- **Current palette file** — exported in the selected JASC, GIMP, RGB888, RGB555, RGB565, or RGB444 format
-- **manifest.json** — documents the grayscale values and their source/replacement color mappings
-- The canvas-generated PNG is an RGBA grayscale index map, not a binary PLTE-indexed PNG
-
-### Saved Palettes
-- Save the current replacement palette with a custom name, stored locally via **IndexedDB** — no account or server required
-- Load a saved palette onto any sprite; black and white entries are matched by identity, normal colors positionally
-- Export all saved palettes as a JSON backup file; import to restore them on any device
-- Delete individual palettes
+- Create and name palettes without uploading a sprite
+- Add colors manually, with the color picker, or from the Color Format Converter
+- Display and edit values as **HEX, RGB888, RGB555, RGB565, or RGB444**
+- Reorder, copy, edit, and remove individual colors
+- Save palettes locally in IndexedDB
+- Reopen, edit, or delete saved palettes
+- Copy the complete palette or download it as a plain-text file in the selected display format
+- Share the same saved-palette library with Sprite Lab
 
 ---
 
-## Technical notes
+## Implementation highlights
 
-- **Vanilla JS, no framework, no build step.** Plain `<script>` tags loaded in dependency order. The codebase is split into focused modules (`color-formats.js`, `converter.js`, `sprite-recolorer.js`, `palette-export.js`, etc.) without requiring a bundler.
-- **Custom Pickr format fields.** The Pickr color picker normally only accepts hex input. A custom UI is injected into each picker instance after initialization, adding a format selector and text input that parses and applies any supported color format directly.
-- **Canvas-based color detection.** Sprite colors are extracted by reading raw `ImageData` pixel-by-pixel, keyed by RGB triplet, and deduplicated into a sorted palette. Recoloring applies a replacement map over the same `ImageData` in a single pass.
-- **Semantic black/white matching.** When loading a saved or imported palette, white and black source slots are matched by identity (not position), so they never receive incorrect replacements even when the palette counts differ between sprites.
-- **Client-side ZIP generation.** The index-map PNG, selected palette file, and mapping manifest are assembled entirely in the browser using JSZip.
-- **IndexedDB palette storage.** Saved palettes are persisted locally with IndexedDB. Each record stores the replacement colors, names, and flags indicating whether the palette included white/black entries, so loading onto a different sprite always aligns correctly.
-- **Zero data transmission.** Uploaded images are read with `FileReader` and processed locally. Nothing is sent to a server.
+RetroColorLab uses a small, dependency-light architecture organized around focused JavaScript files rather than a framework or bundler.
+
+- **Canvas-based recoloring:** images are read into `ImageData`, unique opaque RGB values are deduplicated, and replacement colors are applied through a lookup map in a single pass
+- **Shared color model:** the converter, Sprite Lab, and Palette Manager use the same parsing and formatting utilities for RGB888, RGB555, RGB565, RGB444, and HEX
+- **Format-aware color controls:** Pickr is extended with custom inputs that understand the project's retro color formats instead of accepting only HEX
+- **Persistent local library:** IndexedDB stores named palettes that can be created in Palette Manager or captured from Sprite Lab
+- **Semantic palette matching:** saved sprite palettes retain information about white and black slots so those colors can be matched by identity when applied to another sprite
+- **Responsive integer scaling:** Fit mode calculates the largest whole-number scale supported by the available preview area
+- **Client-side privacy:** `FileReader`, Canvas, and IndexedDB keep uploaded artwork and user-created palettes on the device
 
 ---
 
 ## Run locally
 
-Open `index.html` directly in a browser, or serve the folder:
+Open `index.html` directly in a browser, or serve the project directory with a simple local server:
 
 ```bash
 python -m http.server 8000
-# then open http://localhost:8000
 ```
 
-Both work — no server is required.
+Then open `http://localhost:8000`.
+
+No installation or build command is required.
 
 ---
 
 ## Project structure
 
-```
-retrocolorlab/
+```text
+retropalettelab/
 ├── index.html
 ├── css/
 │   └── styles.css
 └── js/
-    ├── main.js               # Entry point — wires converter, sprite recolorer, format menus
-    ├── color-formats.js      # Color parsing and formatting for all supported formats
-    ├── converter.js          # Palette converter section logic
-    ├── sprite-recolorer.js   # Sprite upload, color detection, swap UI, export
-    ├── palette-export.js     # Palette file generation (JASC, GIMP, txt, indexed PNG)
-    ├── palette-storage.js    # IndexedDB save/load/export/import for named palettes
-    ├── format-menus.js       # Dropdown menu open/close behavior
-    ├── pickr-enhancements.js # Custom format fields injected into Pickr instances
-    └── ui-utils.js           # Shared utilities (toast, clipboard, canvas blob, etc.)
+    ├── main.js               # Application initialization
+    ├── color-formats.js      # Shared color parsing and formatting
+    ├── converter.js          # Color Format Converter behavior
+    ├── sprite-recolorer.js   # Sprite detection, recoloring, preview, and palette workflow
+    ├── palette-builder.js    # Standalone Palette Manager and saved-palette library
+    ├── palette-export.js     # Palette file generation and parsing
+    ├── palette-storage.js    # IndexedDB palette persistence
+    ├── format-menus.js       # Custom format-selector behavior
+    ├── pickr-enhancements.js # Format-aware Pickr controls
+    └── ui-utils.js           # Shared browser and interface utilities
 ```
 
 ---
 
 ## Dependencies
 
-Loaded via CDN — no npm install required:
+Dependencies are loaded from a CDN; no npm install is required.
 
 | Library | Purpose |
 |---|---|
-| [Pickr](https://github.com/Simonwep/pickr) | Color picker UI |
-| [JSZip](https://stuk.github.io/jszip/) | Client-side ZIP generation |
-| [Material Symbols](https://fonts.google.com/icons) | Icon font |
+| [Pickr](https://github.com/Simonwep/pickr) | Color picker interface |
+| [Material Symbols](https://fonts.google.com/icons) | Interface icons |
+
+---
+
+## Roadmap
+
+See [ROADMAP.md](ROADMAP.md) for planned improvements and deferred ideas.
 
 ---
 
