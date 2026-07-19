@@ -59,13 +59,18 @@ It is designed for pixel artists, retro game developers, and ROM hackers working
 
 ### Palette Manager
 
-- Create and name palettes without uploading a sprite
-- Add colors manually, with the color picker, or from the Color Format Converter
-- Display and edit values as **HEX, RGB888, RGB555, RGB565, or RGB444**
-- Reorder, copy, edit, and remove individual colors
-- Save palettes locally in IndexedDB
-- Reopen, edit, or delete saved palettes
-- Copy the complete palette or download it as a plain-text file in the selected display format
+- Create required-name palettes without uploading a sprite
+- Add colors from the Palette Manager or send them directly from the Color Format Converter
+- Edit colors with the same picker and inline value controls used by Sprite Lab's Color Manager
+- Drag colors to reorder them, or copy and delete individual entries with compact row actions
+- View and edit a synchronized text representation of the working palette
+- Select **JASC (.pal), GIMP (.gpl), RGB888, RGB555, RGB565, or RGB444** palette output
+- Copy or download the complete palette in the selected format
+- Import `.pal`, `.gpl`, and `.txt` files, then explicitly select the format used by the file contents before parsing
+- Save new palettes locally in IndexedDB; changes to reopened palettes autosave after edits
+- Search and sort saved palettes by date, name, or color count
+- Preview every saved palette as an ordered, evenly divided color strip
+- Reopen or delete saved palettes from the full-height, independently scrollable library
 - Share the same saved-palette library with Sprite Lab
 
 ---
@@ -77,7 +82,9 @@ RetroColorLab uses a small, dependency-light architecture organized around focus
 - **Canvas-based recoloring:** images are read into `ImageData`, unique opaque RGB values are deduplicated, and replacement colors are applied through a lookup map in a single pass
 - **Shared color model:** the converter, Sprite Lab, and Palette Manager use the same parsing and formatting utilities for RGB888, RGB555, RGB565, RGB444, and HEX
 - **Format-aware color controls:** Pickr is extended with custom inputs that understand the project's retro color formats instead of accepting only HEX
-- **Persistent local library:** IndexedDB stores named palettes that can be created in Palette Manager or captured from Sprite Lab
+- **Persistent local library:** IndexedDB stores named palettes created in Palette Manager or captured from Sprite Lab; reopened Palette Manager entries use debounced autosaving and flush pending edits before switching palettes
+- **Shared palette file pipeline:** Palette Manager and Sprite Lab use the same JASC, GIMP, RGB888, RGB555, RGB565, and RGB444 generation and parsing utilities
+- **Explicit import interpretation:** Palette Manager asks which format is stored inside an imported file instead of assuming its encoding from an ambiguous extension such as `.pal`
 - **Semantic palette matching:** saved sprite palettes retain information about white and black slots so those colors can be matched by identity when applied to another sprite
 - **Responsive integer scaling:** Fit mode calculates the largest whole-number scale supported by the available preview area
 - **Client-side privacy:** `FileReader`, Canvas, and IndexedDB keep uploaded artwork and user-created palettes on the device
@@ -131,9 +138,9 @@ Dependencies are loaded from a CDN; no npm install is required.
 
 ---
 
-## Roadmap
+## TODO
 
-See [ROADMAP.md](ROADMAP.md) for planned improvements and deferred ideas.
+See [ROADMAP.md](ROADMAP.md) for the current task list and deferred ideas.
 
 ---
 
