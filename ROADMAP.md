@@ -10,7 +10,6 @@ Working task list for RetroColorLab, in no particular order.
 - **Unify modal design** — give dialogs consistent structure, spacing, controls, and behavior
 - **Build notification toast system** — replace one-off feedback messages with a consistent page-wide notification system
 - **Unify design across the page** — align shared components, spacing, typography, interaction states, and responsive behavior
-- **Swap sprite preview controls** — swap the locations of the download and scale controls in the sprite preview
 - **Content and copy improvements** — revise headings, descriptions, labels, empty states, tooltips, and feedback messages for greater clarity and consistency across the page
 - **Theme improvements and light/dark modes** — refine the visual theme and introduce polished light and dark appearances with an accessible theme switcher
 
