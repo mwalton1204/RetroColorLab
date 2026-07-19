@@ -214,16 +214,26 @@ function initPaletteBuilder() {
     palettes.forEach(palette => {
       const item = document.createElement("div");
       item.className = "saved-palette-item";
+      item.dataset.id = String(palette.id);
+      item.tabIndex = 0;
+      item.setAttribute("role", "button");
+      item.setAttribute("aria-label", `Edit ${palette.name}`);
+      if (palette.id === currentPaletteId) {
+        item.classList.add("is-editing");
+        item.setAttribute("aria-current", "true");
+      }
 
       const row = document.createElement("div");
       row.className = "saved-palette-row";
       row.innerHTML = `
         <div class="saved-palette-info">
-          <span class="saved-palette-name">${escapeHtml(palette.name)}</span>
-          <span class="saved-palette-meta">${palette.colorCount} color${palette.colorCount === 1 ? "" : "s"}</span>
+          <span class="saved-palette-name-line">
+            <span class="saved-palette-name">${escapeHtml(palette.name)}</span>
+            <span class="saved-palette-hover-edit material-symbols-rounded" aria-hidden="true">edit</span>
+          </span>
+          <span class="saved-palette-meta">${palette.colorCount} color${palette.colorCount === 1 ? "" : "s"}<span class="saved-palette-editing-label"> · Editing</span></span>
         </div>
         <div class="saved-palette-actions">
-          <button class="preview-download-btn builder-load-palette" type="button" data-id="${palette.id}" aria-label="Edit ${escapeHtml(palette.name)}" title="Edit palette"><span class="material-symbols-rounded">edit</span></button>
           <button class="preview-download-btn builder-delete-palette" type="button" data-id="${palette.id}" aria-label="Delete ${escapeHtml(palette.name)}" title="Delete palette"><span class="material-symbols-rounded">delete</span></button>
         </div>`;
 
@@ -260,6 +270,7 @@ function initPaletteBuilder() {
     nameInput.value = "";
     setDirty(false);
     render();
+    renderLibrary();
   }
 
   addButton.addEventListener("click", () => {
@@ -453,11 +464,11 @@ function initPaletteBuilder() {
   });
 
   savedList.addEventListener("click", async event => {
-    const loadButton = event.target.closest(".builder-load-palette");
     const deleteButton = event.target.closest(".builder-delete-palette");
-    const id = Number((loadButton || deleteButton)?.dataset.id);
+    const loadItem = deleteButton ? null : event.target.closest(".saved-palette-item[data-id]");
+    const id = Number((loadItem || deleteButton)?.dataset.id);
     if (!id) return;
-    if (loadButton) {
+    if (loadItem) {
       try {
         await flushAutosave();
         const palette = await loadPaletteById(id);
@@ -467,6 +478,7 @@ function initPaletteBuilder() {
         nameInput.value = palette.name;
         setDirty(false);
         render();
+        renderLibrary();
         showToast(toast, `Editing “${palette.name}”.`);
       } catch { showToast(toast, "Palette could not be loaded."); }
     }
@@ -479,6 +491,14 @@ function initPaletteBuilder() {
         showToast(toast, "Palette deleted.");
       } catch { showToast(toast, "Palette could not be deleted."); }
     }
+  });
+
+  savedList.addEventListener("keydown", event => {
+    if (event.target.closest("button")) return;
+    const item = event.target.closest(".saved-palette-item[data-id]");
+    if (!item || (event.key !== "Enter" && event.key !== " ")) return;
+    event.preventDefault();
+    item.click();
   });
 
   document.addEventListener("palette-library-changed", refreshLibrary);
