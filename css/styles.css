@@ -144,7 +144,7 @@ textarea:focus, input[type="file"]:focus, select:focus { border-color: var(--acc
 .working-palette-count { color: var(--muted-2); font-size: 0.8rem; }
 
 .palette-builder-section-head { align-items: center; }
-.palette-builder-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; align-items: start; }
+.palette-builder-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 18px; align-items: stretch; }
 .palette-builder-main { min-width: 0; }
 .palette-builder-toolbar { display: grid; grid-template-columns: minmax(220px, 1fr) auto; gap: 14px; align-items: end; margin-bottom: 12px; }
 .palette-builder-name-group, .palette-builder-format-group { min-width: 0; }
@@ -172,10 +172,17 @@ textarea:focus, input[type="file"]:focus, select:focus { border-color: var(--acc
 .builder-row-btn:hover { color: var(--text); background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.07); }
 .builder-row-btn .material-symbols-rounded { font-size: 17px; }
 .palette-builder-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-.palette-builder-library { border-radius: var(--radius-md); }
+.palette-builder-library { display: flex; flex-direction: column; min-height: 0; border-radius: var(--radius-md); }
+.palette-builder-library .saved-palettes-list { flex: 1 1 auto; max-height: none; min-height: 0; align-content: start; }
 .palette-builder-library-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
 .palette-builder-library-head h3 { margin: 0; }
-.palette-builder-library-head .material-symbols-rounded { color: var(--muted-2); font-size: 19px; }
+.palette-builder-library-tools { display: flex; align-items: center; gap: 6px; }
+.builder-library-tool-btn { width: 34px; height: 34px; min-width: 34px; min-height: 34px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+.builder-library-tool-btn[aria-expanded="true"] { color: var(--text); border-color: rgba(127,199,255,0.3); background: rgba(127,199,255,0.1); }
+.builder-library-tool-btn .material-symbols-rounded { font-size: 17px; }
+.palette-builder-library-control { margin-bottom: 8px; }
+.palette-builder-library-control[hidden] { display: none; }
+.palette-builder-library-control .builder-text-input, .palette-builder-library-control select { width: 100%; min-height: 36px; height: 36px; font-size: 0.8rem; }
 .input-picker-inline, .input-picker-inline .pickr, .input-picker-inline .pcr-button {
   width: 48px !important;
   height: 48px !important;
@@ -562,7 +569,11 @@ button:disabled { cursor: not-allowed; opacity: 0.38; filter: none; transform: n
 .saved-palettes-list::-webkit-scrollbar { width: 6px; }
 .saved-palettes-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.14); border-radius: 999px; }
 .saved-palettes-empty { color: var(--muted-2); font-size: 0.85rem; margin: 0; text-align: center; padding: 10px 0; }
+.saved-palette-item { min-width: 0; }
 .saved-palette-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 8px 10px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: var(--radius-sm); }
+.saved-palette-row.has-color-strip { border-radius: var(--radius-sm) var(--radius-sm) 0 0; }
+.saved-palette-color-strip { display: flex; width: 100%; height: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.07); border-top: 0; border-radius: 0 0 var(--radius-sm) var(--radius-sm); }
+.saved-palette-color-strip > span { flex: 1 1 0; min-width: 0; }
 .saved-palette-info { min-width: 0; }
 .saved-palette-name { display: block; font-size: 0.85rem; font-weight: 800; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .saved-palette-meta { display: block; font-size: 0.75rem; color: var(--muted-2); margin-top: 1px; }
@@ -682,6 +693,7 @@ button:disabled { cursor: not-allowed; opacity: 0.38; filter: none; transform: n
   .preview-grid { grid-template-columns: 1fr; }
   .palette-builder-layout { grid-template-columns: 1fr; }
   .palette-builder-library { order: 2; }
+  .palette-builder-library .saved-palettes-list { flex: none; max-height: 200px; }
 }
 @media (max-width: 680px) {
   .converter-io-row { grid-template-columns: 1fr; }

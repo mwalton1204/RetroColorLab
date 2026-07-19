@@ -63,7 +63,7 @@ async function listPalettes() {
       const records = event.target.result;
       resolve(
         records
-          .map(({ id, name, savedAt, colors }) => ({ id, name, savedAt, colorCount: (colors || []).length }))
+          .map(({ id, name, savedAt, colors }) => ({ id, name, savedAt, colors: colors || [], colorCount: (colors || []).length }))
           .reverse()
       );
     };

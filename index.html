@@ -255,6 +255,32 @@
       </div>
 
       <div class="palette-builder-layout">
+        <aside class="workspace-card palette-builder-library">
+          <div class="palette-builder-library-head">
+            <h3>Saved palettes</h3>
+            <div class="palette-builder-library-tools">
+              <button id="builderPaletteSortBtn" class="secondary builder-library-tool-btn" type="button" aria-label="Sort saved palettes" aria-controls="builderPaletteSortControl" aria-expanded="false" title="Sort saved palettes"><span class="material-symbols-rounded" aria-hidden="true">sort</span></button>
+              <button id="builderPaletteSearchBtn" class="secondary builder-library-tool-btn" type="button" aria-label="Search saved palettes" aria-controls="builderPaletteSearchControl" aria-expanded="false" title="Search saved palettes"><span class="material-symbols-rounded" aria-hidden="true">search</span></button>
+            </div>
+          </div>
+          <div id="builderPaletteSearchControl" class="palette-builder-library-control" hidden>
+            <label class="sr-only" for="builderPaletteSearch">Search saved palettes</label>
+            <input id="builderPaletteSearch" class="builder-text-input" type="search" placeholder="Search palettes…" autocomplete="off" />
+          </div>
+          <div id="builderPaletteSortControl" class="palette-builder-library-control" hidden>
+            <label class="sr-only" for="builderPaletteSort">Sort saved palettes</label>
+            <select id="builderPaletteSort" aria-label="Sort saved palettes">
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+              <option value="name-asc">Alphabetical (Ascending)</option>
+              <option value="name-desc">Alphabetical (Descending)</option>
+              <option value="colors-asc">Qty Colors (Ascending)</option>
+              <option value="colors-desc">Qty Colors (Descending)</option>
+            </select>
+          </div>
+          <div id="builderSavedPalettes" class="saved-palettes-list"></div>
+        </aside>
+
         <div class="palette-builder-main">
           <div class="palette-builder-toolbar">
             <div class="palette-builder-name-group">
@@ -298,13 +324,6 @@
           <p id="builderToast" class="toast" aria-live="polite"></p>
         </div>
 
-        <aside class="workspace-card palette-builder-library">
-          <div class="palette-builder-library-head">
-            <h3>Saved palettes</h3>
-            <span class="material-symbols-rounded" aria-hidden="true">bookmarks</span>
-          </div>
-          <div id="builderSavedPalettes" class="saved-palettes-list"></div>
-        </aside>
       </div>
     </section>
 

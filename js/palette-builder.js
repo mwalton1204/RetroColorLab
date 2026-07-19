@@ -14,12 +14,19 @@ function initPaletteBuilder() {
   const copyButton = document.getElementById("copyBuilderPaletteBtn");
   const downloadButton = document.getElementById("downloadBuilderPaletteBtn");
   const savedList = document.getElementById("builderSavedPalettes");
+  const librarySearchButton = document.getElementById("builderPaletteSearchBtn");
+  const librarySortButton = document.getElementById("builderPaletteSortBtn");
+  const librarySearchControl = document.getElementById("builderPaletteSearchControl");
+  const librarySortControl = document.getElementById("builderPaletteSortControl");
+  const librarySearch = document.getElementById("builderPaletteSearch");
+  const librarySort = document.getElementById("builderPaletteSort");
   const toast = document.getElementById("builderToast");
 
   let displayFormat = "HEX";
   let colors = [];
   let currentPaletteId = null;
   let dirty = false;
+  let libraryPalettes = [];
   let pickr;
 
   function normalizeSavedColor(entry) {
@@ -136,18 +143,32 @@ function initPaletteBuilder() {
     render();
   }
 
-  async function refreshLibrary() {
-    let palettes = [];
-    try { palettes = await listPalettes(); } catch {}
+  function renderLibrary() {
+    const query = librarySearch.value.trim().toLocaleLowerCase();
+    const palettes = libraryPalettes.filter(palette => {
+      return !query || palette.name.toLocaleLowerCase().includes(query);
+    });
+    const sorters = {
+      newest: (a, b) => new Date(b.savedAt) - new Date(a.savedAt),
+      oldest: (a, b) => new Date(a.savedAt) - new Date(b.savedAt),
+      "name-asc": (a, b) => a.name.localeCompare(b.name),
+      "name-desc": (a, b) => b.name.localeCompare(a.name),
+      "colors-asc": (a, b) => a.colorCount - b.colorCount,
+      "colors-desc": (a, b) => b.colorCount - a.colorCount
+    };
+    palettes.sort(sorters[librarySort.value] || sorters.newest);
     savedList.replaceChildren();
     if (!palettes.length) {
       const empty = document.createElement("p");
       empty.className = "saved-palettes-empty";
-      empty.textContent = "No saved palettes.";
+      empty.textContent = libraryPalettes.length ? "No palettes match your search." : "No saved palettes.";
       savedList.appendChild(empty);
       return;
     }
     palettes.forEach(palette => {
+      const item = document.createElement("div");
+      item.className = "saved-palette-item";
+
       const row = document.createElement("div");
       row.className = "saved-palette-row";
       row.innerHTML = `
@@ -159,8 +180,30 @@ function initPaletteBuilder() {
           <button class="preview-download-btn builder-load-palette" type="button" data-id="${palette.id}" aria-label="Edit ${escapeHtml(palette.name)}" title="Edit palette"><span class="material-symbols-rounded">edit</span></button>
           <button class="preview-download-btn builder-delete-palette" type="button" data-id="${palette.id}" aria-label="Delete ${escapeHtml(palette.name)}" title="Delete palette"><span class="material-symbols-rounded">delete</span></button>
         </div>`;
-      savedList.appendChild(row);
+
+      const paletteColors = (palette.colors || []).map(normalizeSavedColor).filter(Boolean);
+      if (paletteColors.length) {
+        row.classList.add("has-color-strip");
+        const strip = document.createElement("div");
+        strip.className = "saved-palette-color-strip";
+        strip.setAttribute("aria-label", `${palette.name} colors in order`);
+        paletteColors.forEach((color, index) => {
+          const swatch = document.createElement("span");
+          swatch.style.backgroundColor = color.hex;
+          swatch.title = `${index + 1}: ${color.hex}`;
+          strip.appendChild(swatch);
+        });
+        item.append(row, strip);
+      } else {
+        item.appendChild(row);
+      }
+      savedList.appendChild(item);
     });
+  }
+
+  async function refreshLibrary() {
+    try { libraryPalettes = await listPalettes(); } catch { libraryPalettes = []; }
+    renderLibrary();
   }
 
   function resetPalette() {
@@ -180,6 +223,18 @@ function initPaletteBuilder() {
   });
   nameInput.addEventListener("input", () => setDirty());
   newButton.addEventListener("click", resetPalette);
+
+  function toggleLibraryControl(button, control, focusTarget) {
+    const willOpen = control.hidden;
+    control.hidden = !willOpen;
+    button.setAttribute("aria-expanded", String(willOpen));
+    if (willOpen) focusTarget.focus();
+  }
+
+  librarySearchButton.addEventListener("click", () => toggleLibraryControl(librarySearchButton, librarySearchControl, librarySearch));
+  librarySortButton.addEventListener("click", () => toggleLibraryControl(librarySortButton, librarySortControl, librarySort));
+  librarySearch.addEventListener("input", renderLibrary);
+  librarySort.addEventListener("change", renderLibrary);
 
   list.addEventListener("change", event => {
     const input = event.target.closest(".palette-builder-value");
