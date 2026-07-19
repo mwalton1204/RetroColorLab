@@ -3,14 +3,19 @@ function initPaletteBuilder() {
   const nameInput = document.getElementById("builderPaletteName");
   const formatButton = document.getElementById("builderFormatButton");
   const formatMenu = document.getElementById("builderFormatMenu");
-  const colorInput = document.getElementById("builderColorInput");
-  const colorPickerEl = document.getElementById("builderColorPicker");
   const addButton = document.getElementById("builderAddColorBtn");
-  const error = document.getElementById("builderError");
   const count = document.getElementById("builderColorCount");
   const list = document.getElementById("builderColorList");
+  const paletteText = document.getElementById("builderPaletteText");
   const newButton = document.getElementById("newBuilderPaletteBtn");
+  const clearButton = document.getElementById("clearBuilderPaletteBtn");
+  const importButton = document.getElementById("importBuilderPaletteBtn");
+  const importInput = document.getElementById("importBuilderPaletteInput");
+  const importFormatDialog = document.getElementById("builderImportFormatDialog");
+  const importFormatOptions = document.getElementById("builderImportFormatOptions");
+  const importFormatCancel = document.getElementById("builderImportFormatCancel");
   const saveButton = document.getElementById("saveBuilderPaletteBtn");
+  const saveButtonLabel = document.getElementById("builderSavePaletteLabel");
   const copyButton = document.getElementById("copyBuilderPaletteBtn");
   const downloadButton = document.getElementById("downloadBuilderPaletteBtn");
   const savedList = document.getElementById("builderSavedPalettes");
@@ -22,12 +27,16 @@ function initPaletteBuilder() {
   const librarySort = document.getElementById("builderPaletteSort");
   const toast = document.getElementById("builderToast");
 
-  let displayFormat = "HEX";
+  let displayFormat = "palettes/rgb888.txt";
   let colors = [];
   let currentPaletteId = null;
   let dirty = false;
   let libraryPalettes = [];
-  let pickr;
+  let rowPickrs = [];
+  let draggedColorIndex = null;
+  let pendingImportText = null;
+  let pendingImportFilename = null;
+  let autosaveTimer = null;
 
   function normalizeSavedColor(entry) {
     const hex = typeof entry === "string" ? entry : entry?.replacementHex;
@@ -37,65 +46,119 @@ function initPaletteBuilder() {
 
   function setDirty(value = true) {
     dirty = value;
-    saveButton.textContent = currentPaletteId && !dirty ? "Saved" : "Save palette";
+    saveButtonLabel.textContent = currentPaletteId && !dirty ? "Saved" : "Save Palette";
+    if (autosaveTimer) clearTimeout(autosaveTimer);
+    autosaveTimer = null;
+    if (value && currentPaletteId) {
+      autosaveTimer = setTimeout(() => autosaveCurrentPalette(), 400);
+    }
   }
 
-  function showInputError(message = "") {
-    error.textContent = message;
-    error.style.display = message ? "block" : "none";
+  function paletteSignature() {
+    return JSON.stringify({ name: nameInput.value.trim(), colors: colors.map(color => color.hex) });
+  }
+
+  async function autosaveCurrentPalette() {
+    autosaveTimer = null;
+    const id = currentPaletteId;
+    const name = nameInput.value.trim();
+    if (!id || !name) return;
+    const signature = paletteSignature();
+    const records = colors.map((color, index) => ({ replacementHex: color.hex, name: `Color ${index + 1}` }));
+    try {
+      await updatePalette(id, name, records, false, false, { source: "builder" });
+      if (currentPaletteId !== id) return;
+      if (paletteSignature() === signature) setDirty(false);
+      await refreshLibrary();
+      document.dispatchEvent(new CustomEvent("palette-library-changed"));
+    } catch {
+      if (currentPaletteId === id) showToast(toast, "Palette changes could not be saved.");
+    }
+  }
+
+  async function flushAutosave() {
+    if (!autosaveTimer) return;
+    clearTimeout(autosaveTimer);
+    autosaveTimer = null;
+    await autosaveCurrentPalette();
   }
 
   function formattedPalette() {
-    return colors.map(color => formatOutput(color, displayFormat)).join("\n");
+    const rows = colors.map((color, index) => ({
+      index,
+      grayscale: color,
+      source: color,
+      replacement: color,
+      replacementHex: color.hex,
+      name: `Color ${index + 1}`
+    }));
+    return buildPaletteFiles(rows)[displayFormat] || "";
+  }
+
+  function editorColorFormat() {
+    const match = displayFormat.match(/rgb(888|555|565|444)/i);
+    return match ? `RGB${match[1]}` : "RGB888";
   }
 
   function render() {
+    rowPickrs.forEach(rowPickr => rowPickr.destroyAndRemove?.());
+    rowPickrs = [];
     list.replaceChildren();
     count.textContent = `${colors.length} color${colors.length === 1 ? "" : "s"}`;
+    paletteText.value = formattedPalette();
     copyButton.disabled = colors.length === 0;
     downloadButton.disabled = colors.length === 0;
-
-    if (!colors.length) {
-      const empty = document.createElement("div");
-      empty.className = "palette-builder-empty";
-      empty.innerHTML = '<span class="material-symbols-rounded" aria-hidden="true">palette</span><p>No colors yet. Add a value above or send one from the converter.</p>';
-      list.appendChild(empty);
-      return;
-    }
+    const downloadType = displayFormat.endsWith(".pal") ? "PAL" : displayFormat.endsWith(".gpl") ? "GPL" : "TXT";
+    downloadButton.setAttribute("aria-label", `Download ${downloadType} palette`);
+    downloadButton.title = `Download ${downloadType} palette`;
 
     colors.forEach((color, index) => {
       const row = document.createElement("div");
-      row.className = "palette-builder-color-row";
+      row.className = "swap-row palette-builder-color-row";
       row.dataset.index = String(index);
+      row.style.setProperty("--replacement-color", color.hex);
 
-      const position = document.createElement("span");
-      position.className = "palette-builder-index";
-      position.textContent = String(index).padStart(2, "0");
+      const handle = document.createElement("span");
+      handle.className = "swap-drag-handle material-symbols-rounded";
+      handle.draggable = true;
+      handle.dataset.index = String(index);
+      handle.setAttribute("aria-label", `Drag color ${index + 1} to reorder`);
+      handle.title = "Drag to reorder";
+      handle.textContent = "drag_indicator";
 
-      const swatch = document.createElement("span");
-      swatch.className = "palette-builder-swatch";
-      swatch.style.backgroundColor = color.hex;
-      swatch.title = color.hex;
+      const editableColor = document.createElement("div");
+      editableColor.className = "editable-color";
+      const pickerAnchor = document.createElement("div");
+      pickerAnchor.className = "pickr-anchor palette-builder-row-pickr";
+      editableColor.appendChild(pickerAnchor);
 
       const value = document.createElement("input");
-      value.className = "builder-text-input palette-builder-value";
+      value.className = "swap-editor-field palette-builder-value";
       value.type = "text";
       value.spellcheck = false;
-      value.value = formatOutput(color, displayFormat);
+      value.value = formatOutput(color, editorColorFormat());
       value.dataset.index = String(index);
       value.setAttribute("aria-label", `Color ${index + 1} value`);
 
       const controls = document.createElement("div");
       controls.className = "palette-builder-row-actions";
       controls.innerHTML = `
-        <button class="builder-row-btn builder-move-up" type="button" data-index="${index}" aria-label="Move color ${index + 1} up" title="Move up" ${index === 0 ? "disabled" : ""}><span class="material-symbols-rounded">arrow_upward</span></button>
-        <button class="builder-row-btn builder-move-down" type="button" data-index="${index}" aria-label="Move color ${index + 1} down" title="Move down" ${index === colors.length - 1 ? "disabled" : ""}><span class="material-symbols-rounded">arrow_downward</span></button>
-        <button class="builder-row-btn builder-copy-color" type="button" data-index="${index}" aria-label="Copy color ${index + 1}" title="Copy color"><span class="material-symbols-rounded">content_copy</span></button>
-        <button class="builder-row-btn builder-remove-color" type="button" data-index="${index}" aria-label="Remove color ${index + 1}" title="Remove color"><span class="material-symbols-rounded">delete</span></button>
+        <button class="preview-download-btn builder-copy-color" type="button" data-index="${index}" aria-label="Copy color ${index + 1}" title="Copy color"><span class="material-symbols-rounded">content_copy</span></button>
+        <button class="preview-download-btn builder-remove-color" type="button" data-index="${index}" aria-label="Delete color ${index + 1}" title="Delete color"><span class="material-symbols-rounded">delete</span></button>
       `;
 
-      row.append(position, swatch, value, controls);
+      row.append(handle, editableColor, value, controls);
       list.appendChild(row);
+
+      const rowPickr = createPickr(pickerAnchor, color.hex, hex => {
+        const updatedColor = colorFromHex(hex);
+        colors[index] = updatedColor;
+        row.style.setProperty("--replacement-color", updatedColor.hex);
+        value.value = formatOutput(updatedColor, editorColorFormat());
+        paletteText.value = formattedPalette();
+        setDirty();
+      }, toast);
+      rowPickrs.push(rowPickr);
     });
   }
 
@@ -110,26 +173,12 @@ function initPaletteBuilder() {
     colors.push(color);
     setDirty();
     render();
-    showToast(toast, `${formatOutput(color, displayFormat)} added.`);
+    showToast(toast, `${formatOutput(color, editorColorFormat())} added.`);
     if (options.focus) section.scrollIntoView({ behavior: "smooth", block: "start" });
     return true;
   }
 
-  function parseBuilderInput() {
-    try {
-      const [color] = parsePalette(colorInput.value, displayFormat);
-      if (!color) throw new Error("Enter a color value first.");
-      showInputError();
-      return color;
-    } catch (err) {
-      showInputError(err.message);
-      return null;
-    }
-  }
-
   function setFormat(value, label = value) {
-    let pendingColor = null;
-    try { [pendingColor] = parsePalette(colorInput.value, displayFormat); } catch {}
     displayFormat = value;
     formatButton.textContent = label;
     formatMenu.querySelectorAll("button").forEach(button => {
@@ -137,9 +186,6 @@ function initPaletteBuilder() {
       button.classList.toggle("active", selected);
       button.setAttribute("aria-selected", String(selected));
     });
-    colorInput.placeholder = placeholderForFormat(displayFormat);
-    if (pendingColor) colorInput.value = formatOutput(pendingColor, displayFormat);
-    showInputError();
     render();
   }
 
@@ -207,22 +253,27 @@ function initPaletteBuilder() {
   }
 
   function resetPalette() {
+    if (autosaveTimer) clearTimeout(autosaveTimer);
+    autosaveTimer = null;
     colors = [];
     currentPaletteId = null;
-    nameInput.value = "Untitled palette";
+    nameInput.value = "";
     setDirty(false);
     render();
   }
 
   addButton.addEventListener("click", () => {
-    const color = parseBuilderInput();
-    if (color) addColor(color.hex);
-  });
-  colorInput.addEventListener("keydown", event => {
-    if (event.key === "Enter") addButton.click();
+    let seed = (0x63b5ce + colors.length * 0x9e3779) & 0xffffff;
+    let hex;
+    do {
+      hex = `#${seed.toString(16).padStart(6, "0").toUpperCase()}`;
+      seed = (seed + 0x9e3779) & 0xffffff;
+    } while (colors.some(color => color.hex.toUpperCase() === hex));
+    addColor(hex);
   });
   nameInput.addEventListener("input", () => setDirty());
-  newButton.addEventListener("click", resetPalette);
+  newButton.addEventListener("click", async () => { await flushAutosave(); resetPalette(); });
+  clearButton.addEventListener("click", async () => { await flushAutosave(); resetPalette(); });
 
   function toggleLibraryControl(button, control, focusTarget) {
     const willOpen = control.hidden;
@@ -241,13 +292,12 @@ function initPaletteBuilder() {
     if (!input) return;
     const index = Number(input.dataset.index);
     try {
-      const [color] = parsePalette(input.value, displayFormat);
+      const [color] = parsePalette(input.value, editorColorFormat());
       if (!color) throw new Error("Enter a color value.");
       const duplicate = colors.some((entry, entryIndex) => entryIndex !== index && entry.hex.toUpperCase() === color.hex.toUpperCase());
       if (duplicate) throw new Error("That color is already in the palette.");
       colors[index] = color;
       setDirty();
-      showInputError();
       render();
     } catch (err) {
       showToast(toast, err.message);
@@ -260,19 +310,114 @@ function initPaletteBuilder() {
     if (!button) return;
     const index = Number(button.dataset.index);
     if (button.classList.contains("builder-copy-color")) {
-      const value = formatOutput(colors[index], displayFormat);
+      const value = formatOutput(colors[index], editorColorFormat());
       await copyText(value);
       showToast(toast, `${value} copied.`);
       return;
     }
     if (button.classList.contains("builder-remove-color")) colors.splice(index, 1);
-    if (button.classList.contains("builder-move-up") && index > 0) [colors[index - 1], colors[index]] = [colors[index], colors[index - 1]];
-    if (button.classList.contains("builder-move-down") && index < colors.length - 1) [colors[index + 1], colors[index]] = [colors[index], colors[index + 1]];
     setDirty();
     render();
   });
 
+  list.addEventListener("dragstart", event => {
+    const handle = event.target.closest(".swap-drag-handle");
+    if (!handle) return;
+    draggedColorIndex = Number(handle.dataset.index);
+    event.dataTransfer.effectAllowed = "move";
+  });
+
+  list.addEventListener("dragover", event => {
+    if (draggedColorIndex === null) return;
+    if (event.target.closest(".palette-builder-color-row")) event.preventDefault();
+  });
+
+  list.addEventListener("drop", event => {
+    const targetRow = event.target.closest(".palette-builder-color-row");
+    if (!targetRow || draggedColorIndex === null) return;
+    event.preventDefault();
+    const targetIndex = Number(targetRow.dataset.index);
+    const [movedColor] = colors.splice(draggedColorIndex, 1);
+    colors.splice(targetIndex, 0, movedColor);
+    draggedColorIndex = null;
+    setDirty();
+    render();
+  });
+
+  list.addEventListener("dragend", () => { draggedColorIndex = null; });
+
+  paletteText.addEventListener("change", () => {
+    try {
+      const parsedColors = parsePalettePreviewText(paletteText.value, displayFormat)
+        .map(color => colorFromHex(toHex(color.r, color.g, color.b)));
+      if (!parsedColors.length) throw new Error("Enter at least one valid color.");
+      colors = parsedColors;
+      setDirty();
+      render();
+      showToast(toast, "Palette updated from text.");
+    } catch (err) {
+      showToast(toast, err.message || "The palette text could not be parsed.");
+    }
+  });
+
+  function importPaletteText(text, filename, format) {
+    let importedColors;
+    if (format === "HEX") {
+      importedColors = text.split(/\r?\n/)
+        .map(line => line.trim())
+        .filter(Boolean)
+        .map(line => parsePalette(line, "HEX")[0])
+        .filter(Boolean);
+    } else {
+      importedColors = parsePalettePreviewText(text, format).map(color => colorFromHex(toHex(color.r, color.g, color.b)));
+    }
+    if (!importedColors.length) throw new Error("No colors were found in the file.");
+
+    colors = importedColors;
+    currentPaletteId = null;
+    nameInput.value = filename.replace(/\.[^.]+$/, "") || "Imported palette";
+    const selectedFormat = format === "HEX" ? "palettes/rgb888.txt" : format;
+    const formatOption = formatMenu.querySelector(`[data-value="${selectedFormat}"]`);
+    setFormat(selectedFormat, formatOption?.textContent || "RGB888 (.txt)");
+    setDirty();
+    render();
+    showToast(toast, `Imported ${colors.length} color${colors.length === 1 ? "" : "s"} from “${filename}”.`);
+  }
+
+  importButton.addEventListener("click", () => importInput.click());
+  importInput.addEventListener("change", () => {
+    const file = importInput.files[0];
+    if (!file) return;
+    importInput.value = "";
+    const reader = new FileReader();
+    reader.onload = event => {
+      pendingImportText = String(event.target.result || "");
+      pendingImportFilename = file.name;
+      importFormatDialog.showModal();
+    };
+    reader.onerror = () => showToast(toast, "The palette file could not be read.");
+    reader.readAsText(file);
+  });
+
+  importFormatOptions.addEventListener("click", event => {
+    const option = event.target.closest("[data-value]");
+    if (!option || pendingImportText === null) return;
+    importFormatDialog.close();
+    try { importPaletteText(pendingImportText, pendingImportFilename, option.dataset.value); }
+    catch (err) { showToast(toast, err.message || "The palette could not be imported."); }
+    pendingImportText = null;
+    pendingImportFilename = null;
+  });
+
+  importFormatCancel.addEventListener("click", () => {
+    importFormatDialog.close();
+    pendingImportText = null;
+    pendingImportFilename = null;
+  });
+
   saveButton.addEventListener("click", async () => {
+    if (autosaveTimer) clearTimeout(autosaveTimer);
+    autosaveTimer = null;
     const name = nameInput.value.trim();
     if (!name) { nameInput.focus(); showToast(toast, "Enter a palette name."); return; }
     if (!colors.length) { showToast(toast, "Add at least one color first."); return; }
@@ -298,7 +443,10 @@ function initPaletteBuilder() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${sanitizeFileName(nameInput.value)}-${displayFormat.toLowerCase()}.txt`;
+    const selectedName = displayFormat.split("/").pop() || "palette.txt";
+    const extension = selectedName.split(".").pop() || "txt";
+    const suffix = extension === "txt" ? `-${selectedName.replace(/\.txt$/i, "")}` : "";
+    link.download = `${sanitizeFileName(nameInput.value)}${suffix}.${extension}`;
     link.click();
     URL.revokeObjectURL(url);
     showToast(toast, "Palette downloaded.");
@@ -311,6 +459,7 @@ function initPaletteBuilder() {
     if (!id) return;
     if (loadButton) {
       try {
+        await flushAutosave();
         const palette = await loadPaletteById(id);
         if (!palette) return;
         colors = (palette.colors || []).map(normalizeSavedColor).filter(Boolean);
@@ -331,12 +480,6 @@ function initPaletteBuilder() {
       } catch { showToast(toast, "Palette could not be deleted."); }
     }
   });
-
-  pickr = createPickr(colorPickerEl, "#63B5CE", hex => {
-    const color = colorFromHex(hex);
-    colorInput.value = formatOutput(color, displayFormat);
-    showInputError();
-  }, toast);
 
   document.addEventListener("palette-library-changed", refreshLibrary);
   render();

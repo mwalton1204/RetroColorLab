@@ -274,52 +274,70 @@
               <option value="oldest">Oldest</option>
               <option value="name-asc">Alphabetical (Ascending)</option>
               <option value="name-desc">Alphabetical (Descending)</option>
-              <option value="colors-asc">Qty Colors (Ascending)</option>
-              <option value="colors-desc">Qty Colors (Descending)</option>
+              <option value="colors-asc">Color Count (Ascending)</option>
+              <option value="colors-desc">Color Count (Descending)</option>
             </select>
           </div>
           <div id="builderSavedPalettes" class="saved-palettes-list"></div>
         </aside>
 
-        <div class="palette-builder-main">
-          <div class="palette-builder-toolbar">
+        <div class="workspace-card palette-builder-main">
+          <div class="palette-builder-editor-head">
             <div class="palette-builder-name-group">
-              <label for="builderPaletteName">Palette name</label>
-              <input id="builderPaletteName" class="builder-text-input" type="text" value="Untitled palette" maxlength="64" />
+              <input id="builderPaletteName" class="builder-text-input" type="text" value="" placeholder="Palette Name" aria-label="Palette name" maxlength="64" required />
             </div>
-            <div class="palette-builder-format-group">
-              <span class="field-label">Display format</span>
-              <div class="format-menu" data-format-menu="builder-display">
-                <button id="builderFormatButton" class="format-menu-button builder-format-button" type="button" aria-haspopup="listbox" aria-expanded="false">HEX</button>
-                <div id="builderFormatMenu" class="format-menu-list" role="listbox" aria-label="Palette display format">
-                  <button type="button" role="option" aria-selected="true" data-value="HEX" class="active">HEX</button>
-                  <button type="button" role="option" aria-selected="false" data-value="RGB888">RGB888</button>
-                  <button type="button" role="option" aria-selected="false" data-value="RGB555">RGB555</button>
-                  <button type="button" role="option" aria-selected="false" data-value="RGB565">RGB565</button>
-                  <button type="button" role="option" aria-selected="false" data-value="RGB444">RGB444</button>
+            <button id="clearBuilderPaletteBtn" class="upload-clear-btn" type="button" aria-label="Clear palette editor" title="Clear palette editor">
+              <span class="material-symbols-rounded" aria-hidden="true">delete</span>
+            </button>
+          </div>
+
+          <div class="palette-builder-workspace-grid">
+            <section class="palette-builder-pane palette-builder-colors-pane" aria-labelledby="builderColorsHeading">
+              <div class="palette-builder-list-head">
+                <h3 id="builderColorsHeading">Colors</h3>
+                <span id="builderColorCount" class="working-palette-count">0 colors</span>
+              </div>
+              <div id="builderColorList" class="palette-builder-color-list"></div>
+              <button id="builderAddColorBtn" class="palette-builder-add-color-bar" type="button" aria-label="Add a new color" title="Add a new color">
+                <span class="material-symbols-rounded" aria-hidden="true">add</span>
+              </button>
+            </section>
+
+            <section class="palette-builder-pane palette-builder-text-pane" aria-label="Palette text">
+              <textarea id="builderPaletteText" class="palette-file-text builder-palette-text is-editable" spellcheck="false" aria-label="Current palette text"></textarea>
+              <div class="palette-builder-format-group sprite-format-section-inline color-manager-output-format">
+                <span class="sprite-format-label">Palette Format:</span>
+                <div class="format-menu" data-format-menu="builder-display">
+                  <button id="builderFormatButton" class="format-menu-button swap-format-inline" type="button" aria-haspopup="listbox" aria-expanded="false">RGB888 (.txt)</button>
+                  <div id="builderFormatMenu" class="format-menu-list" role="listbox" aria-label="Palette display format">
+                    <button type="button" role="option" aria-selected="false" data-value="palettes/jasc.pal">JASC (.pal)</button>
+                    <button type="button" role="option" aria-selected="false" data-value="palettes/gimp.gpl">GIMP (.gpl)</button>
+                    <button type="button" role="option" aria-selected="true" data-value="palettes/rgb888.txt" class="active">RGB888 (.txt)</button>
+                    <button type="button" role="option" aria-selected="false" data-value="palettes/rgb555.txt">RGB555 (.txt)</button>
+                    <button type="button" role="option" aria-selected="false" data-value="palettes/rgb565.txt">RGB565 (.txt)</button>
+                    <button type="button" role="option" aria-selected="false" data-value="palettes/rgb444.txt">RGB444 (.txt)</button>
+                  </div>
                 </div>
               </div>
-            </div>
+            </section>
           </div>
 
-          <div class="palette-builder-add-row">
-            <div id="builderColorPicker" class="pickr-anchor builder-color-picker" aria-label="Pick palette color"></div>
-            <label class="sr-only" for="builderColorInput">Color value</label>
-            <input id="builderColorInput" class="builder-text-input" type="text" value="#63B5CE" spellcheck="false" autocomplete="off" />
-            <button id="builderAddColorBtn" type="button">Add color</button>
-          </div>
-          <p id="builderError" class="builder-error" role="alert"></p>
-
-          <div class="palette-builder-list-head">
-            <h3>Colors</h3>
-            <span id="builderColorCount" class="working-palette-count">0 colors</span>
-          </div>
-          <div id="builderColorList" class="palette-builder-color-list"></div>
-
-          <div class="palette-builder-actions">
-            <button id="saveBuilderPaletteBtn" type="button">Save palette</button>
-            <button id="copyBuilderPaletteBtn" class="secondary" type="button" disabled>Copy palette</button>
-            <button id="downloadBuilderPaletteBtn" class="secondary" type="button" disabled>Download .txt</button>
+          <div class="palette-builder-actions swap-card-actions">
+            <input id="importBuilderPaletteInput" type="file" accept=".pal,.gpl,.txt,text/plain" hidden />
+            <button id="importBuilderPaletteBtn" class="secondary palette-library-action" type="button">
+              <span class="material-symbols-rounded" aria-hidden="true">upload_file</span>
+              <span>Import Palette</span>
+            </button>
+            <button id="saveBuilderPaletteBtn" class="secondary palette-library-action" type="button">
+              <span class="material-symbols-rounded" aria-hidden="true">bookmark_add</span>
+              <span id="builderSavePaletteLabel">Save Palette</span>
+            </button>
+            <button id="copyBuilderPaletteBtn" class="secondary swap-card-icon-action" type="button" aria-label="Copy palette text" title="Copy palette text" disabled>
+              <span class="material-symbols-rounded" aria-hidden="true">content_copy</span>
+            </button>
+            <button id="downloadBuilderPaletteBtn" class="secondary swap-card-icon-action" type="button" aria-label="Download palette" title="Download palette" disabled>
+              <span class="material-symbols-rounded" aria-hidden="true">download</span>
+            </button>
           </div>
           <p id="builderToast" class="toast" aria-live="polite"></p>
         </div>
@@ -343,6 +361,25 @@
         <button type="button" data-value="palettes/rgb444.txt">RGB444 .txt</button>
       </div>
       <button id="paletteFormatDialogCancel" type="button" class="secondary palette-format-dialog-cancel">Cancel</button>
+    </div>
+  </dialog>
+
+  <dialog id="builderImportFormatDialog" class="palette-format-dialog">
+    <div class="palette-format-dialog-inner">
+      <div>
+        <h3>Import Palette</h3>
+        <p class="palette-format-dialog-label">Select the color format used inside this file:</p>
+      </div>
+      <div id="builderImportFormatOptions" class="palette-format-dialog-options">
+        <button type="button" data-value="palettes/jasc.pal">JASC PAL</button>
+        <button type="button" data-value="palettes/gimp.gpl">GIMP GPL</button>
+        <button type="button" data-value="palettes/rgb888.txt">RGB888</button>
+        <button type="button" data-value="palettes/rgb555.txt">RGB555</button>
+        <button type="button" data-value="palettes/rgb565.txt">RGB565</button>
+        <button type="button" data-value="palettes/rgb444.txt">RGB444</button>
+        <button type="button" data-value="HEX">HEX</button>
+      </div>
+      <button id="builderImportFormatCancel" type="button" class="secondary palette-format-dialog-cancel">Cancel</button>
     </div>
   </dialog>
 
