@@ -398,9 +398,30 @@
 
   <dialog id="importSavedPaletteDialog" class="palette-format-dialog import-saved-palette-dialog">
     <div class="palette-format-dialog-inner">
-      <div>
-        <h3>Load Palette</h3>
+      <div class="import-saved-palette-heading">
+        <div class="import-saved-palette-title-row">
+          <h3>Load Palette</h3>
+          <div class="palette-builder-library-tools">
+            <button id="loadPaletteSortBtn" class="secondary builder-library-tool-btn" type="button" aria-label="Sort saved palettes" aria-controls="loadPaletteSortControl" aria-expanded="false" title="Sort saved palettes"><span class="material-symbols-rounded" aria-hidden="true">sort</span></button>
+            <button id="loadPaletteSearchBtn" class="secondary builder-library-tool-btn" type="button" aria-label="Search saved palettes" aria-controls="loadPaletteSearchControl" aria-expanded="false" title="Search saved palettes"><span class="material-symbols-rounded" aria-hidden="true">search</span></button>
+          </div>
+        </div>
         <p class="palette-format-dialog-label">Choose a saved palette to apply to this sprite.</p>
+      </div>
+      <div id="loadPaletteSearchControl" class="saved-palette-dialog-control" hidden>
+        <label class="sr-only" for="loadPaletteSearch">Search saved palettes</label>
+        <input id="loadPaletteSearch" class="builder-text-input" type="search" placeholder="Search palettes…" autocomplete="off" />
+      </div>
+      <div id="loadPaletteSortControl" class="saved-palette-dialog-control" hidden>
+        <label class="sr-only" for="loadPaletteSort">Sort saved palettes</label>
+        <select id="loadPaletteSort" aria-label="Sort saved palettes">
+          <option value="newest">Newest</option>
+          <option value="oldest">Oldest</option>
+          <option value="name-asc">Alphabetical (Ascending)</option>
+          <option value="name-desc">Alphabetical (Descending)</option>
+          <option value="colors-asc">Qty Colors (Ascending)</option>
+          <option value="colors-desc">Qty Colors (Descending)</option>
+        </select>
       </div>
       <div id="importSavedPaletteList" class="saved-palettes-list import-saved-palette-list"></div>
       <button id="cancelImportSavedPaletteBtn" type="button" class="secondary palette-format-dialog-cancel">Cancel</button>

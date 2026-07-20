@@ -30,6 +30,12 @@ function initSpriteRecolorer() {
   const importSavedPaletteBtn = document.getElementById("importSavedPaletteBtn");
   const importSavedPaletteDialog = document.getElementById("importSavedPaletteDialog");
   const importSavedPaletteList = document.getElementById("importSavedPaletteList");
+  const loadPaletteSearchBtn = document.getElementById("loadPaletteSearchBtn");
+  const loadPaletteSortBtn = document.getElementById("loadPaletteSortBtn");
+  const loadPaletteSearchControl = document.getElementById("loadPaletteSearchControl");
+  const loadPaletteSortControl = document.getElementById("loadPaletteSortControl");
+  const loadPaletteSearch = document.getElementById("loadPaletteSearch");
+  const loadPaletteSort = document.getElementById("loadPaletteSort");
   const cancelImportSavedPaletteBtn = document.getElementById("cancelImportSavedPaletteBtn");
   const saveSpritePaletteDialog = document.getElementById("saveSpritePaletteDialog");
   const saveSpritePaletteForm = document.getElementById("saveSpritePaletteForm");
@@ -57,6 +63,7 @@ function initSpriteRecolorer() {
   let pinnedMappingId = null;
   let draggedMappingId = null;
   let currentSpriteName = "Sprite";
+  let loadPaletteChoices = [];
 
   function includeBlackWhite() {
     return true;
@@ -704,15 +711,24 @@ function initSpriteRecolorer() {
     }
   });
 
-  async function openSavedPaletteDialog() {
+  function renderSavedPaletteChoices() {
     importSavedPaletteList.replaceChildren();
-    let palettes = [];
-    try { palettes = await listPalettes(); } catch {}
+    const query = loadPaletteSearch.value.trim().toLocaleLowerCase();
+    const palettes = loadPaletteChoices.filter(palette => !query || palette.name.toLocaleLowerCase().includes(query));
+    const sorters = {
+      newest: (a, b) => new Date(b.savedAt) - new Date(a.savedAt),
+      oldest: (a, b) => new Date(a.savedAt) - new Date(b.savedAt),
+      "name-asc": (a, b) => a.name.localeCompare(b.name),
+      "name-desc": (a, b) => b.name.localeCompare(a.name),
+      "colors-asc": (a, b) => a.colorCount - b.colorCount,
+      "colors-desc": (a, b) => b.colorCount - a.colorCount
+    };
+    palettes.sort(sorters[loadPaletteSort.value] || sorters.newest);
 
     if (!palettes.length) {
       const empty = document.createElement("p");
       empty.className = "saved-palettes-empty";
-      empty.textContent = "No saved palettes. Create one in Palette Builder first.";
+      empty.textContent = loadPaletteChoices.length ? "No palettes match your search." : "No saved palettes. Create one in Palette Manager first.";
       importSavedPaletteList.appendChild(empty);
     } else {
       palettes.forEach(palette => {
@@ -727,6 +743,11 @@ function initSpriteRecolorer() {
         importSavedPaletteList.appendChild(button);
       });
     }
+  }
+
+  async function openSavedPaletteDialog() {
+    try { loadPaletteChoices = await listPalettes(); } catch { loadPaletteChoices = []; }
+    renderSavedPaletteChoices();
     importSavedPaletteDialog.showModal();
   }
 
@@ -765,6 +786,16 @@ function initSpriteRecolorer() {
 
   importSavedPaletteBtn.addEventListener("click", openSavedPaletteDialog);
   cancelImportSavedPaletteBtn.addEventListener("click", () => importSavedPaletteDialog.close());
+  function toggleLoadPaletteControl(button, control, focusTarget) {
+    const willOpen = control.hidden;
+    control.hidden = !willOpen;
+    button.setAttribute("aria-expanded", String(willOpen));
+    if (willOpen) focusTarget.focus();
+  }
+  loadPaletteSearchBtn.addEventListener("click", () => toggleLoadPaletteControl(loadPaletteSearchBtn, loadPaletteSearchControl, loadPaletteSearch));
+  loadPaletteSortBtn.addEventListener("click", () => toggleLoadPaletteControl(loadPaletteSortBtn, loadPaletteSortControl, loadPaletteSort));
+  loadPaletteSearch.addEventListener("input", renderSavedPaletteChoices);
+  loadPaletteSort.addEventListener("change", renderSavedPaletteChoices);
   importSavedPaletteList.addEventListener("click", async event => {
     const option = event.target.closest(".import-saved-palette-option");
     if (!option) return;
