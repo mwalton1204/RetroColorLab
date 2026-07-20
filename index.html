@@ -245,14 +245,17 @@
 
       <div class="palette-builder-layout">
         <aside class="workspace-card palette-builder-library">
-          <div class="palette-builder-library-head">
-            <h3>Saved palettes</h3>
-            <div class="palette-builder-library-tools">
-              <button id="builderAddFolderBtn" class="secondary builder-library-tool-btn" type="button" aria-label="Create palette folder" title="Create palette folder"><span class="material-symbols-rounded" aria-hidden="true">create_new_folder</span></button>
-              <button id="builderPaletteSortBtn" class="secondary builder-library-tool-btn" type="button" aria-label="Sort saved palettes" aria-controls="builderPaletteSortControl" aria-expanded="false" title="Sort saved palettes"><span class="material-symbols-rounded" aria-hidden="true">sort</span></button>
-              <button id="builderPaletteSearchBtn" class="secondary builder-library-tool-btn" type="button" aria-label="Search saved palettes" aria-controls="builderPaletteSearchControl" aria-expanded="false" title="Search saved palettes"><span class="material-symbols-rounded" aria-hidden="true">search</span></button>
-            </div>
+          <div class="palette-builder-list-head">
+            <h3>Saved Palettes</h3>
           </div>
+          <button id="builderAddFolderBtn" class="secondary builder-library-tool-btn" type="button" aria-label="Create palette folder" title="Create palette folder" hidden><span class="material-symbols-rounded" aria-hidden="true">create_new_folder</span></button>
+          <button id="builderFolderSearchBtn" class="secondary builder-library-tool-btn" type="button" aria-label="Search palette folders" aria-controls="builderFolderSearchControl" aria-expanded="false" title="Search palette folders" hidden><span class="material-symbols-rounded" aria-hidden="true">search</span></button>
+          <div id="builderFolderSearchControl" class="palette-builder-library-control" hidden>
+            <label class="sr-only" for="builderFolderSearch">Search palette folders</label>
+            <input id="builderFolderSearch" class="builder-text-input" type="search" placeholder="Search folders…" autocomplete="off" />
+          </div>
+          <button id="builderPaletteSortBtn" class="secondary builder-library-tool-btn" type="button" aria-label="Sort saved palettes" aria-controls="builderPaletteSortControl" aria-expanded="false" title="Sort saved palettes" hidden><span class="material-symbols-rounded" aria-hidden="true">sort</span></button>
+          <button id="builderPaletteSearchBtn" class="secondary builder-library-tool-btn" type="button" aria-label="Search saved palettes" aria-controls="builderPaletteSearchControl" aria-expanded="false" title="Search saved palettes" hidden><span class="material-symbols-rounded" aria-hidden="true">search</span></button>
           <div id="builderPaletteSearchControl" class="palette-builder-library-control" hidden>
             <label class="sr-only" for="builderPaletteSearch">Search saved palettes</label>
             <input id="builderPaletteSearch" class="builder-text-input" type="search" placeholder="Search palettes…" autocomplete="off" />
@@ -384,6 +387,19 @@
       <div class="save-sprite-palette-actions">
         <button id="paletteFolderCancelBtn" class="secondary" type="button">Cancel</button>
         <button id="paletteFolderSubmitBtn" class="secondary" type="submit">Create Folder</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="paletteDeleteDialog" class="palette-format-dialog palette-folder-dialog">
+    <form id="paletteDeleteForm" class="palette-format-dialog-inner">
+      <div>
+        <h3>Delete Palette</h3>
+        <p id="paletteDeleteHelp" class="palette-format-dialog-label">This palette will be permanently deleted.</p>
+      </div>
+      <div class="save-sprite-palette-actions">
+        <button id="paletteDeleteCancelBtn" class="secondary" type="button">Cancel</button>
+        <button class="secondary" type="submit">Delete Palette</button>
       </div>
     </form>
   </dialog>

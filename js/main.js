@@ -1,3 +1,8 @@
+document.querySelectorAll('input:not([type]), input[type="text"], input[type="search"], input[type="email"], input[type="url"], input[type="tel"], input[type="number"], textarea').forEach(field => {
+  field.value = "";
+  field.setAttribute("autocomplete", "off");
+});
+
 const paletteBuilder = initPaletteBuilder();
 const converter = initConverter();
 const spriteRecolorer = initSpriteRecolorer();

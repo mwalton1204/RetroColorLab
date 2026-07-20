@@ -33,6 +33,15 @@ function initSpriteRecolorer() {
   const loadPaletteSearchBtn = document.getElementById("loadPaletteSearchBtn");
   const loadPaletteSortBtn = document.getElementById("loadPaletteSortBtn");
   const loadPaletteSearchControl = document.getElementById("loadPaletteSearchControl");
+
+  function updateSwapListFade() {
+    const hasOverflow = swapList.scrollHeight > swapList.clientHeight + 1;
+    const hasMoreBelow = swapList.scrollTop + swapList.clientHeight < swapList.scrollHeight - 1;
+    swapList.classList.toggle("has-scroll-fade", hasOverflow && hasMoreBelow);
+  }
+
+  swapList.addEventListener("scroll", updateSwapListFade, { passive: true });
+  if (typeof ResizeObserver === "function") new ResizeObserver(updateSwapListFade).observe(swapList);
   const loadPaletteSortControl = document.getElementById("loadPaletteSortControl");
   const loadPaletteSearch = document.getElementById("loadPaletteSearch");
   const loadPaletteSort = document.getElementById("loadPaletteSort");
@@ -196,6 +205,7 @@ function initSpriteRecolorer() {
 
     updatePaletteFilePreview();
     updateHighlights();
+    requestAnimationFrame(updateSwapListFade);
   }
 
   function applySpriteZoom() {
@@ -755,7 +765,6 @@ function initSpriteRecolorer() {
         button.dataset.paletteId = String(palette.id);
         button.innerHTML = `
           <span class="saved-palette-name">${escapeHtml(palette.name)}</span>
-          <span class="saved-palette-meta">${palette.colorCount} color${palette.colorCount === 1 ? "" : "s"}</span>
           <span class="material-symbols-rounded" aria-hidden="true">chevron_right</span>`;
         importSavedPaletteList.appendChild(button);
       });

@@ -69,7 +69,7 @@ async function listPalettes() {
       const records = event.target.result;
       resolve(
         records
-          .map(({ id, name, savedAt, colors, folderId }) => ({ id, name, savedAt, colors: colors || [], folderId: folderId ?? null, colorCount: (colors || []).length }))
+          .map(({ id, name, savedAt, colors, folderId, folderOrder }) => ({ id, name, savedAt, colors: colors || [], folderId: folderId ?? null, folderOrder, colorCount: (colors || []).length }))
           .reverse()
       );
     };
@@ -103,7 +103,11 @@ async function listPaletteFolders() {
   const db = await openPaletteDb();
   return new Promise((resolve, reject) => {
     const request = db.transaction(PALETTE_FOLDER_STORE, "readonly").objectStore(PALETTE_FOLDER_STORE).getAll();
-    request.onsuccess = event => resolve(event.target.result.sort((a, b) => a.name.localeCompare(b.name)));
+    request.onsuccess = event => resolve(event.target.result.sort((a, b) => {
+      const aOrder = Number.isFinite(a.sortOrder) ? a.sortOrder : Number.MAX_SAFE_INTEGER;
+      const bOrder = Number.isFinite(b.sortOrder) ? b.sortOrder : Number.MAX_SAFE_INTEGER;
+      return aOrder - bOrder || a.name.localeCompare(b.name) || new Date(a.createdAt) - new Date(b.createdAt);
+    }));
     request.onerror = event => reject(event.target.error);
   });
 }
@@ -111,12 +115,42 @@ async function listPaletteFolders() {
 async function createPaletteFolder(name) {
   const db = await openPaletteDb();
   return new Promise((resolve, reject) => {
-    const request = db.transaction(PALETTE_FOLDER_STORE, "readwrite").objectStore(PALETTE_FOLDER_STORE).add({
-      name: String(name || "New Folder").trim(),
-      createdAt: new Date().toISOString()
-    });
-    request.onsuccess = event => resolve(event.target.result);
+    const tx = db.transaction(PALETTE_FOLDER_STORE, "readwrite");
+    const store = tx.objectStore(PALETTE_FOLDER_STORE);
+    const request = store.getAll();
+    request.onsuccess = () => {
+      const existingFolders = request.result.sort((a, b) => {
+        const aOrder = Number.isFinite(a.sortOrder) ? a.sortOrder : Number.MAX_SAFE_INTEGER;
+        const bOrder = Number.isFinite(b.sortOrder) ? b.sortOrder : Number.MAX_SAFE_INTEGER;
+        return aOrder - bOrder || a.name.localeCompare(b.name);
+      });
+      existingFolders.forEach((folder, index) => {
+        if (folder.sortOrder !== index) store.put({ ...folder, sortOrder: index });
+      });
+      const sortOrder = existingFolders.length;
+      const addRequest = store.add({ name: String(name || "New Folder").trim(), createdAt: new Date().toISOString(), sortOrder });
+      addRequest.onsuccess = event => resolve(event.target.result);
+      addRequest.onerror = event => reject(event.target.error);
+    };
     request.onerror = event => reject(event.target.error);
+  });
+}
+
+async function reorderPaletteFolders(orderedIds) {
+  const db = await openPaletteDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(PALETTE_FOLDER_STORE, "readwrite");
+    const store = tx.objectStore(PALETTE_FOLDER_STORE);
+    const request = store.getAll();
+    request.onsuccess = () => {
+      const orderById = new Map(orderedIds.map((id, index) => [Number(id), index]));
+      request.result.forEach(folder => {
+        if (orderById.has(Number(folder.id))) store.put({ ...folder, sortOrder: orderById.get(Number(folder.id)) });
+      });
+    };
+    tx.oncomplete = () => resolve();
+    tx.onerror = event => reject(event.target.error);
+    tx.onabort = event => reject(event.target.error);
   });
 }
 
@@ -156,16 +190,44 @@ async function deletePaletteFolder(id) {
 }
 
 async function movePaletteToFolder(paletteId, folderId = null) {
-  const palette = await loadPaletteById(Number(paletteId));
-  if (!palette) throw new Error("Palette not found.");
   const db = await openPaletteDb();
   return new Promise((resolve, reject) => {
-    const request = db.transaction(PALETTE_STORE, "readwrite").objectStore(PALETTE_STORE).put({
-      ...palette,
-      folderId: folderId === null ? null : Number(folderId)
-    });
-    request.onsuccess = event => resolve(event.target.result);
+    const tx = db.transaction(PALETTE_STORE, "readwrite");
+    const store = tx.objectStore(PALETTE_STORE);
+    const request = store.getAll();
+    request.onsuccess = () => {
+      const palette = request.result.find(entry => Number(entry.id) === Number(paletteId));
+      if (!palette) { tx.abort(); return; }
+      const destinationId = folderId === null ? null : Number(folderId);
+      const folderOrder = request.result
+        .filter(entry => entry.id !== palette.id && (destinationId === null ? entry.folderId == null : Number(entry.folderId) === destinationId))
+        .reduce((maximum, entry) => Math.max(maximum, Number.isFinite(entry.folderOrder) ? entry.folderOrder : -1), -1) + 1;
+      store.put({ ...palette, folderId: destinationId, folderOrder });
+    };
+    tx.oncomplete = () => resolve();
     request.onerror = event => reject(event.target.error);
+    tx.onerror = event => reject(event.target.error || new Error("Palette not found."));
+    tx.onabort = event => reject(event.target.error || new Error("Palette not found."));
+  });
+}
+
+async function reorderPalettesInFolder(folderId, orderedIds) {
+  const db = await openPaletteDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(PALETTE_STORE, "readwrite");
+    const store = tx.objectStore(PALETTE_STORE);
+    const request = store.getAll();
+    request.onsuccess = () => {
+      const records = new Map(request.result.map(palette => [Number(palette.id), palette]));
+      const destinationId = folderId === null ? null : Number(folderId);
+      orderedIds.forEach((id, index) => {
+        const palette = records.get(Number(id));
+        if (palette) store.put({ ...palette, folderId: destinationId, folderOrder: index });
+      });
+    };
+    tx.oncomplete = () => resolve();
+    tx.onerror = event => reject(event.target.error);
+    tx.onabort = event => reject(event.target.error);
   });
 }
 

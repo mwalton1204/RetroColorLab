@@ -21,12 +21,19 @@ function initPaletteBuilder() {
   const folderNameInput = document.getElementById("paletteFolderName");
   const folderCancelButton = document.getElementById("paletteFolderCancelBtn");
   const folderSubmitButton = document.getElementById("paletteFolderSubmitBtn");
+  const paletteDeleteDialog = document.getElementById("paletteDeleteDialog");
+  const paletteDeleteForm = document.getElementById("paletteDeleteForm");
+  const paletteDeleteHelp = document.getElementById("paletteDeleteHelp");
+  const paletteDeleteCancelButton = document.getElementById("paletteDeleteCancelBtn");
   const saveButton = document.getElementById("saveBuilderPaletteBtn");
   const saveButtonLabel = document.getElementById("builderSavePaletteLabel");
   const copyButton = document.getElementById("copyBuilderPaletteBtn");
   const downloadButton = document.getElementById("downloadBuilderPaletteBtn");
   const savedList = document.getElementById("builderSavedPalettes");
   const addFolderButton = document.getElementById("builderAddFolderBtn");
+  const folderSearchButton = document.getElementById("builderFolderSearchBtn");
+  const folderSearchControl = document.getElementById("builderFolderSearchControl");
+  const folderSearch = document.getElementById("builderFolderSearch");
   const librarySearchButton = document.getElementById("builderPaletteSearchBtn");
   const librarySortButton = document.getElementById("builderPaletteSortBtn");
   const librarySearchControl = document.getElementById("builderPaletteSearchControl");
@@ -42,7 +49,9 @@ function initPaletteBuilder() {
   let libraryPalettes = [];
   let libraryFolders = [];
   const collapsedFolderIds = new Set();
+  const knownFolderIds = new Set();
   let draggedPaletteId = null;
+  let draggedFolderId = null;
   let rowPickrs = [];
   let draggedColorIndex = null;
   let pendingImportText = null;
@@ -50,6 +59,18 @@ function initPaletteBuilder() {
   let autosaveTimer = null;
   let folderDialogMode = "create";
   let folderDialogId = null;
+  let pendingDeletePaletteId = null;
+  let scrollCueObserver = null;
+  let folderViewportHeight = 223;
+
+  function updateColorListFade() {
+    const hasOverflow = list.scrollHeight > list.clientHeight + 1;
+    const hasMoreBelow = list.scrollTop + list.clientHeight < list.scrollHeight - 1;
+    list.classList.toggle("has-scroll-fade", hasOverflow && hasMoreBelow);
+  }
+
+  list.addEventListener("scroll", updateColorListFade, { passive: true });
+  if (typeof ResizeObserver === "function") new ResizeObserver(updateColorListFade).observe(list);
 
   function normalizeSavedColor(entry, index = 0) {
     const hex = typeof entry === "string" ? entry : entry?.replacementHex;
@@ -177,6 +198,7 @@ function initPaletteBuilder() {
       }, toast);
       rowPickrs.push(rowPickr);
     });
+    requestAnimationFrame(updateColorListFade);
   }
 
   function addColor(hex, options = {}) {
@@ -207,7 +229,14 @@ function initPaletteBuilder() {
   }
 
   function renderLibrary() {
+    const restoreSearchFocus = document.activeElement === librarySearch;
+    const searchSelectionStart = librarySearch.selectionStart;
+    const searchSelectionEnd = librarySearch.selectionEnd;
+    const restoreFolderSearchFocus = document.activeElement === folderSearch;
+    const folderSearchSelectionStart = folderSearch.selectionStart;
+    const folderSearchSelectionEnd = folderSearch.selectionEnd;
     const query = librarySearch.value.trim().toLocaleLowerCase();
+    const folderQuery = folderSearch.value.trim().toLocaleLowerCase();
     const palettes = libraryPalettes.filter(palette => {
       return !query || palette.name.toLocaleLowerCase().includes(query);
     });
@@ -220,14 +249,19 @@ function initPaletteBuilder() {
       "colors-desc": (a, b) => b.colorCount - a.colorCount
     };
     palettes.sort(sorters[librarySort.value] || sorters.newest);
+    const visibleFolders = libraryFolders
+      .filter(folder => query || !folderQuery || folder.name.toLocaleLowerCase().includes(folderQuery));
     savedList.replaceChildren();
-    if (!palettes.length && (query || !libraryFolders.length)) {
-      const empty = document.createElement("p");
-      empty.className = "saved-palettes-empty";
-      empty.textContent = query ? "No palettes match your search." : "No saved palettes.";
-      savedList.appendChild(empty);
-      return;
-    }
+
+    const foldersHeader = document.createElement("div");
+    foldersHeader.className = "saved-palette-groups-head is-folders-head";
+    foldersHeader.innerHTML = `<span class="saved-palette-folder-name">Folders</span><span class="saved-palette-folder-count">${visibleFolders.length}</span>`;
+    const folderTools = document.createElement("div");
+    folderTools.className = "palette-builder-library-tools";
+    addFolderButton.hidden = false;
+    folderSearchButton.hidden = false;
+    folderTools.append(addFolderButton, folderSearchButton);
+    foldersHeader.appendChild(folderTools);
 
     function createPaletteItem(palette) {
       const item = document.createElement("div");
@@ -249,8 +283,8 @@ function initPaletteBuilder() {
           <span class="saved-palette-name-line">
             <span class="saved-palette-name">${escapeHtml(palette.name)}</span>
             <span class="saved-palette-hover-edit material-symbols-rounded" aria-hidden="true">edit</span>
+            <span class="saved-palette-editing-label">Editing</span>
           </span>
-          <span class="saved-palette-meta">${palette.colorCount} color${palette.colorCount === 1 ? "" : "s"}<span class="saved-palette-editing-label"> · Editing</span></span>
         </div>
         <div class="saved-palette-actions">
           <button class="preview-download-btn builder-delete-palette" type="button" data-id="${palette.id}" aria-label="Delete ${escapeHtml(palette.name)}" title="Delete palette"><span class="material-symbols-rounded">delete</span></button>
@@ -280,48 +314,135 @@ function initPaletteBuilder() {
       const collapsed = folder ? collapsedFolderIds.has(folderId) : false;
       const group = document.createElement("section");
       group.className = "saved-palette-folder";
+      if (!folder) {
+        group.classList.add("is-unfiled");
+      }
       group.dataset.folderId = folderId;
 
       const header = document.createElement("div");
-      header.className = "saved-palette-folder-head";
-      header.innerHTML = `
-        <button class="saved-palette-folder-toggle" type="button" data-folder-id="${folderId}" aria-expanded="${!collapsed}">
-          <span class="material-symbols-rounded" aria-hidden="true">${folder ? "folder" : "folder_open"}</span>
-          <span class="saved-palette-folder-name">${escapeHtml(folder?.name || "Unfiled")}</span>
-          <span class="saved-palette-folder-count">${folderPalettes.length}</span>
-          ${folder ? '<span class="saved-palette-folder-chevron material-symbols-rounded" aria-hidden="true">expand_more</span>' : ""}
-        </button>
-        ${folder ? `<div class="saved-palette-folder-actions">
+      if (folder) {
+        header.className = "saved-palette-folder-head";
+        header.draggable = true;
+        header.innerHTML = `
+          <button class="saved-palette-folder-toggle" type="button" data-folder-id="${folderId}" aria-expanded="${!collapsed}">
+            <span class="material-symbols-rounded" aria-hidden="true">folder</span>
+            <span class="saved-palette-folder-name">${escapeHtml(folder.name)}</span>
+            <span class="saved-palette-folder-count">${folderPalettes.length}</span>
+          </button>`;
+        const actions = document.createElement("div");
+        actions.className = "saved-palette-folder-actions";
+        actions.innerHTML = `
           <button class="preview-download-btn saved-palette-folder-rename" type="button" data-folder-id="${folderId}" aria-label="Rename ${escapeHtml(folder.name)}" title="Rename folder"><span class="material-symbols-rounded" aria-hidden="true">edit</span></button>
-          <button class="preview-download-btn saved-palette-folder-delete" type="button" data-folder-id="${folderId}" aria-label="Delete ${escapeHtml(folder.name)}" title="Delete folder"><span class="material-symbols-rounded" aria-hidden="true">delete</span></button>
-        </div>` : ""}`;
+          <button class="preview-download-btn saved-palette-folder-delete" type="button" data-folder-id="${folderId}" aria-label="Delete ${escapeHtml(folder.name)}" title="Delete folder"><span class="material-symbols-rounded" aria-hidden="true">delete</span></button>`;
+        header.appendChild(actions);
+        const chevron = document.createElement("span");
+        chevron.className = "saved-palette-folder-chevron material-symbols-rounded";
+        chevron.setAttribute("aria-hidden", "true");
+        chevron.textContent = "expand_more";
+        header.appendChild(chevron);
+      } else {
+        header.className = "saved-palette-folder-head saved-palette-groups-head";
+        header.innerHTML = `<span class="saved-palette-folder-name">Unfiled Palettes</span><span class="saved-palette-folder-count">${folderPalettes.length}</span>`;
+        const tools = document.createElement("div");
+        tools.className = "saved-palette-unfiled-tools";
+        librarySortButton.hidden = false;
+        librarySearchButton.hidden = false;
+        tools.append(librarySortButton, librarySearchButton);
+        header.appendChild(tools);
+      }
 
       const contents = document.createElement("div");
       contents.className = "saved-palette-folder-contents";
       contents.hidden = collapsed;
+      if (!folder) {
+        contents.append(librarySearchControl, librarySortControl);
+      }
+
+      const paletteList = document.createElement("div");
+      paletteList.className = "saved-palette-folder-palette-list";
+      if (folderPalettes.length > 3) paletteList.classList.add("has-more-than-three");
       if (folderPalettes.length) {
-        folderPalettes.forEach(palette => contents.appendChild(createPaletteItem(palette)));
+        folderPalettes.forEach(palette => paletteList.appendChild(createPaletteItem(palette)));
       } else {
         const empty = document.createElement("p");
         empty.className = "saved-palette-folder-empty";
-        empty.textContent = "Drop palettes here";
-        contents.appendChild(empty);
+        empty.textContent = query ? "No matching palettes" : "Drop palettes here";
+        paletteList.appendChild(empty);
       }
+      contents.appendChild(paletteList);
       group.append(header, contents);
       return group;
     }
 
-    libraryFolders.forEach(folder => {
-      const folderPalettes = palettes.filter(palette => Number(palette.folderId) === Number(folder.id));
-      if (!query || folderPalettes.length) savedList.appendChild(createFolderGroup(folder, folderPalettes));
+    const foldersRegion = document.createElement("div");
+    foldersRegion.className = "saved-palette-folders-region";
+    foldersRegion.style.height = `${folderViewportHeight}px`;
+    foldersRegion.style.minHeight = `${folderViewportHeight}px`;
+    foldersRegion.style.maxHeight = `${folderViewportHeight}px`;
+    foldersRegion.style.flexBasis = `${folderViewportHeight}px`;
+    visibleFolders.forEach(folder => {
+      const folderPalettes = palettes
+        .filter(palette => Number(palette.folderId) === Number(folder.id))
+        .sort((a, b) => (Number.isFinite(a.folderOrder) ? a.folderOrder : Number.MAX_SAFE_INTEGER) - (Number.isFinite(b.folderOrder) ? b.folderOrder : Number.MAX_SAFE_INTEGER));
+      foldersRegion.appendChild(createFolderGroup(folder, folderPalettes));
+    });
+    const unfiledPalettes = palettes.filter(palette => palette.folderId === null || !libraryFolders.some(folder => Number(folder.id) === Number(palette.folderId)));
+    const splitDivider = document.createElement("div");
+    splitDivider.className = "saved-palette-split-divider";
+    splitDivider.tabIndex = 0;
+    splitDivider.setAttribute("role", "separator");
+    splitDivider.setAttribute("aria-orientation", "horizontal");
+    splitDivider.setAttribute("aria-label", "Resize Unfiled Palettes and Folders");
+    savedList.append(createFolderGroup(null, unfiledPalettes), splitDivider, foldersHeader, folderSearchControl);
+
+    if (!visibleFolders.length) {
+      const emptyFolders = document.createElement("p");
+      emptyFolders.className = "saved-palette-folder-empty saved-palette-folders-empty";
+      emptyFolders.textContent = folderQuery && !query ? "No folders match your search." : "No palette folders.";
+      foldersRegion.appendChild(emptyFolders);
+    }
+    savedList.appendChild(foldersRegion);
+
+    const resizeFolderViewport = nextHeight => {
+      const controlsHeight = [folderSearchControl]
+        .filter(control => !control.hidden)
+        .reduce((height, control) => height + control.offsetHeight + 6, 0);
+      const maximumHeight = Math.max(90, savedList.clientHeight - foldersHeader.offsetHeight - controlsHeight - 130);
+      folderViewportHeight = Math.round(Math.min(maximumHeight, Math.max(90, nextHeight)));
+      foldersRegion.style.height = `${folderViewportHeight}px`;
+      foldersRegion.style.minHeight = `${folderViewportHeight}px`;
+      foldersRegion.style.maxHeight = `${folderViewportHeight}px`;
+      foldersRegion.style.flexBasis = `${folderViewportHeight}px`;
+      splitDivider.setAttribute("aria-valuemin", "90");
+      splitDivider.setAttribute("aria-valuemax", String(Math.round(maximumHeight)));
+      splitDivider.setAttribute("aria-valuenow", String(folderViewportHeight));
+    };
+    resizeFolderViewport(folderViewportHeight);
+
+    splitDivider.addEventListener("pointerdown", event => {
+      event.preventDefault();
+      const startY = event.clientY;
+      const startHeight = folderViewportHeight;
+      splitDivider.classList.add("is-dragging");
+      splitDivider.setPointerCapture(event.pointerId);
+      const handleMove = moveEvent => resizeFolderViewport(startHeight - (moveEvent.clientY - startY));
+      const handleEnd = endEvent => {
+        splitDivider.classList.remove("is-dragging");
+        if (splitDivider.hasPointerCapture(endEvent.pointerId)) splitDivider.releasePointerCapture(endEvent.pointerId);
+        splitDivider.removeEventListener("pointermove", handleMove);
+        splitDivider.removeEventListener("pointerup", handleEnd);
+        splitDivider.removeEventListener("pointercancel", handleEnd);
+      };
+      splitDivider.addEventListener("pointermove", handleMove);
+      splitDivider.addEventListener("pointerup", handleEnd);
+      splitDivider.addEventListener("pointercancel", handleEnd);
     });
 
-    const unfiledPalettes = palettes.filter(palette => palette.folderId === null || !libraryFolders.some(folder => Number(folder.id) === Number(palette.folderId)));
-    if (libraryFolders.length) {
-      savedList.appendChild(createFolderGroup(null, unfiledPalettes));
-    } else {
-      unfiledPalettes.forEach(palette => savedList.appendChild(createPaletteItem(palette)));
-    }
+    splitDivider.addEventListener("keydown", event => {
+      if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+      event.preventDefault();
+      resizeFolderViewport(folderViewportHeight + (event.key === "ArrowUp" ? 18 : -18));
+    });
 
     if (!savedList.children.length) {
       const empty = document.createElement("p");
@@ -329,11 +450,54 @@ function initPaletteBuilder() {
       empty.textContent = "No palettes match your search.";
       savedList.appendChild(empty);
     }
+    if (restoreSearchFocus) {
+      librarySearch.focus({ preventScroll: true });
+      librarySearch.setSelectionRange(searchSelectionStart, searchSelectionEnd);
+    }
+    if (restoreFolderSearchFocus) {
+      folderSearch.focus({ preventScroll: true });
+      folderSearch.setSelectionRange(folderSearchSelectionStart, folderSearchSelectionEnd);
+    }
+
+    const scrollAreas = [foldersRegion, ...savedList.querySelectorAll(".saved-palette-folder-palette-list")];
+    scrollCueObserver?.disconnect();
+    scrollCueObserver = typeof ResizeObserver === "function" ? new ResizeObserver(entries => {
+      entries.forEach(entry => {
+        const area = entry.target;
+        const hasOverflow = area.scrollHeight > area.clientHeight + 1;
+        const hasMoreBelow = area.scrollTop + area.clientHeight < area.scrollHeight - 1;
+        area.classList.toggle("has-scroll-fade", hasOverflow && hasMoreBelow);
+      });
+    }) : null;
+    scrollAreas.forEach(area => {
+      const updateScrollFade = () => {
+        const hasOverflow = area.scrollHeight > area.clientHeight + 1;
+        const hasMoreBelow = area.scrollTop + area.clientHeight < area.scrollHeight - 1;
+        area.classList.toggle("has-scroll-fade", hasOverflow && hasMoreBelow);
+      };
+      area.addEventListener("scroll", updateScrollFade, { passive: true });
+      scrollCueObserver?.observe(area);
+      requestAnimationFrame(updateScrollFade);
+    });
   }
 
   async function refreshLibrary() {
     try {
       [libraryPalettes, libraryFolders] = await Promise.all([listPalettes(), listPaletteFolders()]);
+      const currentFolderIds = new Set(libraryFolders.map(folder => String(folder.id)));
+      libraryFolders.forEach(folder => {
+        const id = String(folder.id);
+        if (!knownFolderIds.has(id)) {
+          knownFolderIds.add(id);
+          collapsedFolderIds.add(id);
+        }
+      });
+      Array.from(knownFolderIds).forEach(id => {
+        if (!currentFolderIds.has(id)) {
+          knownFolderIds.delete(id);
+          collapsedFolderIds.delete(id);
+        }
+      });
     } catch {
       libraryPalettes = [];
       libraryFolders = [];
@@ -373,8 +537,10 @@ function initPaletteBuilder() {
 
   librarySearchButton.addEventListener("click", () => toggleLibraryControl(librarySearchButton, librarySearchControl, librarySearch));
   librarySortButton.addEventListener("click", () => toggleLibraryControl(librarySortButton, librarySortControl, librarySort));
+  folderSearchButton.addEventListener("click", () => toggleLibraryControl(folderSearchButton, folderSearchControl, folderSearch));
   librarySearch.addEventListener("input", renderLibrary);
   librarySort.addEventListener("change", renderLibrary);
+  folderSearch.addEventListener("input", renderLibrary);
 
   function openFolderDialog(mode, folder = null) {
     folderDialogMode = mode;
@@ -408,6 +574,24 @@ function initPaletteBuilder() {
       document.dispatchEvent(new CustomEvent("palette-library-changed"));
       showToast(toast, folderDialogMode === "create" ? `Folder “${name}” created.` : folderDialogMode === "rename" ? `Folder renamed to “${name}”.` : "Folder deleted; palettes moved to Unfiled.");
     } catch { showToast(toast, "Folder could not be updated."); }
+  });
+
+  paletteDeleteCancelButton.addEventListener("click", () => paletteDeleteDialog.close());
+  paletteDeleteDialog.addEventListener("close", () => { pendingDeletePaletteId = null; });
+  paletteDeleteForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    const id = pendingDeletePaletteId;
+    if (!id) return;
+    try {
+      await deletePaletteById(id);
+      paletteDeleteDialog.close();
+      if (currentPaletteId === id) resetPalette();
+      await refreshLibrary();
+      document.dispatchEvent(new CustomEvent("palette-library-changed"));
+      showToast(toast, "Palette deleted.");
+    } catch {
+      showToast(toast, "Palette could not be deleted.");
+    }
   });
 
   list.addEventListener("input", event => {
@@ -600,12 +784,18 @@ function initPaletteBuilder() {
   });
 
   savedList.addEventListener("click", async event => {
-    const folderToggle = event.target.closest(".saved-palette-folder-toggle[data-folder-id]");
-    if (folderToggle?.dataset.folderId) {
+    const folderCard = event.target.closest(".saved-palette-folder:not(.is-unfiled)[data-folder-id]");
+    const bypassFolderToggle = event.target.closest(".saved-palette-folder-rename, .saved-palette-folder-delete, .saved-palette-item, input, select, textarea");
+    if (folderCard && !bypassFolderToggle) {
+      const folderToggle = folderCard.querySelector(":scope > .saved-palette-folder-head > .saved-palette-folder-toggle[data-folder-id]");
       const folderId = folderToggle.dataset.folderId;
-      if (collapsedFolderIds.has(folderId)) collapsedFolderIds.delete(folderId);
+      const willExpand = collapsedFolderIds.has(folderId);
+      if (willExpand) collapsedFolderIds.delete(folderId);
       else collapsedFolderIds.add(folderId);
       renderLibrary();
+      const refreshedToggle = savedList.querySelector(`.saved-palette-folder-toggle[data-folder-id="${folderId}"]`);
+      refreshedToggle?.focus({ preventScroll: true });
+      if (willExpand) refreshedToggle?.closest(".saved-palette-folder")?.scrollIntoView({ block: "nearest" });
       return;
     }
     const renameButton = event.target.closest(".saved-palette-folder-rename[data-folder-id]");
@@ -641,13 +831,12 @@ function initPaletteBuilder() {
       } catch { showToast(toast, "Palette could not be loaded."); }
     }
     if (deleteButton) {
-      try {
-        await deletePaletteById(id);
-        if (currentPaletteId === id) resetPalette();
-        await refreshLibrary();
-        document.dispatchEvent(new CustomEvent("palette-library-changed"));
-        showToast(toast, "Palette deleted.");
-      } catch { showToast(toast, "Palette could not be deleted."); }
+      const palette = libraryPalettes.find(entry => Number(entry.id) === id);
+      pendingDeletePaletteId = id;
+      paletteDeleteHelp.textContent = palette
+        ? `“${palette.name}” will be permanently deleted. This cannot be undone.`
+        : "This palette will be permanently deleted. This cannot be undone.";
+      paletteDeleteDialog.showModal();
     }
   });
 
@@ -661,41 +850,102 @@ function initPaletteBuilder() {
 
   savedList.addEventListener("dragstart", event => {
     const item = event.target.closest(".saved-palette-item[data-id]");
-    if (!item || event.target.closest("button")) return;
-    draggedPaletteId = Number(item.dataset.id);
+    if (item && !event.target.closest("button")) {
+      draggedPaletteId = Number(item.dataset.id);
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", `palette:${draggedPaletteId}`);
+      item.classList.add("is-dragging");
+      return;
+    }
+    const header = event.target.closest(".saved-palette-folder-head[draggable='true']");
+    if (!header || event.target.closest(".saved-palette-folder-actions button")) { event.preventDefault(); return; }
+    const folder = header.closest(".saved-palette-folder[data-folder-id]");
+    draggedFolderId = Number(folder.dataset.folderId);
     event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", String(draggedPaletteId));
-    item.classList.add("is-dragging");
+    event.dataTransfer.setData("text/plain", `folder:${draggedFolderId}`);
+    folder.classList.add("is-dragging");
   });
 
   savedList.addEventListener("dragover", event => {
-    if (!draggedPaletteId) return;
     const folder = event.target.closest(".saved-palette-folder[data-folder-id]");
     if (!folder) return;
+    if (draggedFolderId) {
+      if (!folder.dataset.folderId || Number(folder.dataset.folderId) === draggedFolderId) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+      savedList.querySelectorAll(".is-folder-drop-target").forEach(target => target.classList.remove("is-folder-drop-target"));
+      folder.classList.add("is-folder-drop-target");
+      return;
+    }
+    if (!draggedPaletteId) return;
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
-    savedList.querySelectorAll(".is-drop-target").forEach(target => target.classList.remove("is-drop-target"));
+    savedList.querySelectorAll(".is-drop-target, .is-palette-drop-target").forEach(target => target.classList.remove("is-drop-target", "is-palette-drop-target"));
     folder.classList.add("is-drop-target");
+    const palette = event.target.closest(".saved-palette-item[data-id]");
+    if (palette && Number(palette.dataset.id) !== draggedPaletteId) palette.classList.add("is-palette-drop-target");
   });
 
   savedList.addEventListener("drop", async event => {
     const folder = event.target.closest(".saved-palette-folder[data-folder-id]");
-    if (!folder || !draggedPaletteId) return;
+    if (!folder) return;
     event.preventDefault();
+    if (draggedFolderId) {
+      const sourceId = draggedFolderId;
+      const targetId = Number(folder.dataset.folderId);
+      draggedFolderId = null;
+      if (!targetId || sourceId === targetId) return;
+      const orderedIds = libraryFolders.map(entry => Number(entry.id));
+      const sourceIndex = orderedIds.indexOf(sourceId);
+      const targetIndex = orderedIds.indexOf(targetId);
+      [orderedIds[sourceIndex], orderedIds[targetIndex]] = [orderedIds[targetIndex], orderedIds[sourceIndex]];
+      try {
+        await reorderPaletteFolders(orderedIds);
+        await refreshLibrary();
+        document.dispatchEvent(new CustomEvent("palette-library-changed"));
+        showToast(toast, "Folder order updated.");
+      } catch { showToast(toast, "Folders could not be reordered."); }
+      return;
+    }
+    if (!draggedPaletteId) return;
     const paletteId = draggedPaletteId;
     const folderId = folder.dataset.folderId ? Number(folder.dataset.folderId) : null;
+    const targetPalette = event.target.closest(".saved-palette-item[data-id]");
     draggedPaletteId = null;
+    if (targetPalette && Number(targetPalette.dataset.id) === paletteId) return;
     try {
-      await movePaletteToFolder(paletteId, folderId);
+      const sourcePalette = libraryPalettes.find(palette => Number(palette.id) === paletteId);
+      const sourceFolderId = sourcePalette && libraryFolders.some(entry => Number(entry.id) === Number(sourcePalette.folderId))
+        ? Number(sourcePalette.folderId)
+        : null;
+      const orderedIds = libraryPalettes
+        .filter(palette => folderId === null
+          ? palette.folderId === null || !libraryFolders.some(entry => Number(entry.id) === Number(palette.folderId))
+          : Number(palette.folderId) === folderId)
+        .sort((a, b) => (Number.isFinite(a.folderOrder) ? a.folderOrder : Number.MAX_SAFE_INTEGER) - (Number.isFinite(b.folderOrder) ? b.folderOrder : Number.MAX_SAFE_INTEGER) || new Date(a.savedAt) - new Date(b.savedAt))
+        .map(palette => Number(palette.id));
+      const targetId = targetPalette ? Number(targetPalette.dataset.id) : null;
+      if (sourceFolderId === folderId && targetId) {
+        const sourceIndex = orderedIds.indexOf(paletteId);
+        const targetIndex = orderedIds.indexOf(targetId);
+        [orderedIds[sourceIndex], orderedIds[targetIndex]] = [orderedIds[targetIndex], orderedIds[sourceIndex]];
+      } else {
+        const sourceIndex = orderedIds.indexOf(paletteId);
+        if (sourceIndex >= 0) orderedIds.splice(sourceIndex, 1);
+        const targetIndex = targetId ? orderedIds.indexOf(targetId) : -1;
+        orderedIds.splice(targetIndex < 0 ? orderedIds.length : targetIndex, 0, paletteId);
+      }
+      await reorderPalettesInFolder(folderId, orderedIds);
       await refreshLibrary();
       document.dispatchEvent(new CustomEvent("palette-library-changed"));
-      showToast(toast, folderId ? "Palette moved to folder." : "Palette moved out of folder.");
-    } catch { showToast(toast, "Palette could not be moved."); }
+      if (folderId !== null) showToast(toast, "Palette order updated.");
+    } catch { showToast(toast, "Palette could not be reordered."); }
   });
 
   savedList.addEventListener("dragend", () => {
     draggedPaletteId = null;
-    savedList.querySelectorAll(".is-dragging, .is-drop-target").forEach(target => target.classList.remove("is-dragging", "is-drop-target"));
+    draggedFolderId = null;
+    savedList.querySelectorAll(".is-dragging, .is-drop-target, .is-folder-drop-target, .is-palette-drop-target").forEach(target => target.classList.remove("is-dragging", "is-drop-target", "is-folder-drop-target", "is-palette-drop-target"));
   });
 
   document.addEventListener("palette-library-changed", refreshLibrary);
