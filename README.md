@@ -60,13 +60,13 @@ It is designed for pixel artists, retro game developers, and ROM hackers working
 
 - Create required-name palettes without uploading a sprite
 - Add and edit colors directly in the Palette Manager
-- Edit colors with the same picker and inline value controls used by Sprite Lab's Color Manager
+- Edit colors with the same picker used by Sprite Lab's Color Manager and name each color inline
 - Drag colors to reorder them, or copy and delete individual entries with compact row actions
 - View and edit a synchronized text representation of the working palette
 - Select **JASC (.pal), GIMP (.gpl), RGB888, RGB555, RGB565, or RGB444** palette output
 - Copy or download the complete palette in the selected format
 - Import `.pal`, `.gpl`, and `.txt` files, then explicitly select the format used by the file contents before parsing
-- Save new palettes locally in IndexedDB; changes to reopened palettes autosave after edits
+- Save palettes and color names locally in IndexedDB; changes to reopened palettes autosave after edits
 - Search and sort saved palettes by date, name, or color count
 - Create, rename, collapse, and delete palette folders; drag saved palettes between folders or back into the Unfiled group (deleting a folder preserves its palettes in Unfiled)
 - Preview every saved palette as an ordered, evenly divided color strip

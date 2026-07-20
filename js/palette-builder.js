@@ -51,10 +51,15 @@ function initPaletteBuilder() {
   let folderDialogMode = "create";
   let folderDialogId = null;
 
-  function normalizeSavedColor(entry) {
+  function normalizeSavedColor(entry, index = 0) {
     const hex = typeof entry === "string" ? entry : entry?.replacementHex;
     if (!hex) return null;
-    try { return colorFromHex(hex); } catch { return null; }
+    try {
+      return {
+        ...colorFromHex(hex),
+        name: typeof entry?.name === "string" && entry.name.trim() ? entry.name.trim() : `Color ${index + 1}`
+      };
+    } catch { return null; }
   }
 
   function setDirty(value = true) {
@@ -68,7 +73,7 @@ function initPaletteBuilder() {
   }
 
   function paletteSignature() {
-    return JSON.stringify({ name: nameInput.value.trim(), colors: colors.map(color => color.hex) });
+    return JSON.stringify({ name: nameInput.value.trim(), colors: colors.map(color => ({ hex: color.hex, name: color.name })) });
   }
 
   async function autosaveCurrentPalette() {
@@ -77,7 +82,7 @@ function initPaletteBuilder() {
     const name = nameInput.value.trim();
     if (!id || !name) return;
     const signature = paletteSignature();
-    const records = colors.map((color, index) => ({ replacementHex: color.hex, name: `Color ${index + 1}` }));
+    const records = colors.map((color, index) => ({ replacementHex: color.hex, name: color.name || `Color ${index + 1}` }));
     try {
       await updatePalette(id, name, records, false, false, { source: "builder" });
       if (currentPaletteId !== id) return;
@@ -103,7 +108,7 @@ function initPaletteBuilder() {
       source: color,
       replacement: color,
       replacementHex: color.hex,
-      name: `Color ${index + 1}`
+      name: color.name || `Color ${index + 1}`
     }));
     return buildPaletteFiles(rows)[displayFormat] || "";
   }
@@ -145,13 +150,13 @@ function initPaletteBuilder() {
       pickerAnchor.className = "pickr-anchor palette-builder-row-pickr";
       editableColor.appendChild(pickerAnchor);
 
-      const value = document.createElement("input");
-      value.className = "swap-editor-field palette-builder-value";
-      value.type = "text";
-      value.spellcheck = false;
-      value.value = formatOutput(color, editorColorFormat());
-      value.dataset.index = String(index);
-      value.setAttribute("aria-label", `Color ${index + 1} value`);
+      const name = document.createElement("input");
+      name.className = "swap-editor-field palette-builder-color-name";
+      name.type = "text";
+      name.value = color.name || `Color ${index + 1}`;
+      name.placeholder = `Color ${index + 1}`;
+      name.dataset.index = String(index);
+      name.setAttribute("aria-label", `Color ${index + 1} name`);
 
       const controls = document.createElement("div");
       controls.className = "palette-builder-row-actions";
@@ -160,14 +165,13 @@ function initPaletteBuilder() {
         <button class="preview-download-btn builder-remove-color" type="button" data-index="${index}" aria-label="Delete color ${index + 1}" title="Delete color"><span class="material-symbols-rounded">delete</span></button>
       `;
 
-      row.append(handle, editableColor, value, controls);
+      row.append(handle, editableColor, name, controls);
       list.appendChild(row);
 
       const rowPickr = createPickr(pickerAnchor, color.hex, hex => {
         const updatedColor = colorFromHex(hex);
-        colors[index] = updatedColor;
+        colors[index] = { ...updatedColor, name: colors[index]?.name || `Color ${index + 1}` };
         row.style.setProperty("--replacement-color", updatedColor.hex);
-        value.value = formatOutput(updatedColor, editorColorFormat());
         paletteText.value = formattedPalette();
         setDirty();
       }, toast);
@@ -183,7 +187,7 @@ function initPaletteBuilder() {
       if (options.focus) section.scrollIntoView({ behavior: "smooth", block: "start" });
       return false;
     }
-    colors.push(color);
+    colors.push({ ...color, name: options.name?.trim() || `Color ${colors.length + 1}` });
     setDirty();
     render();
     showToast(toast, `${formatOutput(color, editorColorFormat())} added.`);
@@ -406,22 +410,25 @@ function initPaletteBuilder() {
     } catch { showToast(toast, "Folder could not be updated."); }
   });
 
-  list.addEventListener("change", event => {
-    const input = event.target.closest(".palette-builder-value");
+  list.addEventListener("input", event => {
+    const input = event.target.closest(".palette-builder-color-name");
     if (!input) return;
     const index = Number(input.dataset.index);
-    try {
-      const [color] = parsePalette(input.value, editorColorFormat());
-      if (!color) throw new Error("Enter a color value.");
-      const duplicate = colors.some((entry, entryIndex) => entryIndex !== index && entry.hex.toUpperCase() === color.hex.toUpperCase());
-      if (duplicate) throw new Error("That color is already in the palette.");
-      colors[index] = color;
-      setDirty();
-      render();
-    } catch (err) {
-      showToast(toast, err.message);
-      render();
-    }
+    if (!colors[index]) return;
+    colors[index].name = input.value;
+    paletteText.value = formattedPalette();
+    setDirty();
+  });
+
+  list.addEventListener("change", event => {
+    const input = event.target.closest(".palette-builder-color-name");
+    if (!input) return;
+    const index = Number(input.dataset.index);
+    if (!colors[index] || input.value.trim()) return;
+    colors[index].name = `Color ${index + 1}`;
+    input.value = colors[index].name;
+    paletteText.value = formattedPalette();
+    setDirty();
   });
 
   list.addEventListener("click", async event => {
@@ -478,7 +485,10 @@ function initPaletteBuilder() {
   paletteText.addEventListener("change", () => {
     try {
       const parsedColors = parsePalettePreviewText(paletteText.value, displayFormat)
-        .map(color => colorFromHex(toHex(color.r, color.g, color.b)));
+        .map((color, index) => ({
+          ...colorFromHex(toHex(color.r, color.g, color.b)),
+          name: color.name?.trim() || colors[index]?.name || `Color ${index + 1}`
+        }));
       if (!parsedColors.length) throw new Error("Enter at least one valid color.");
       colors = parsedColors;
       setDirty();
@@ -498,9 +508,17 @@ function initPaletteBuilder() {
         .map(line => parsePalette(line, "HEX")[0])
         .filter(Boolean);
     } else {
-      importedColors = parsePalettePreviewText(text, format).map(color => colorFromHex(toHex(color.r, color.g, color.b)));
+      importedColors = parsePalettePreviewText(text, format).map(color => ({
+        ...colorFromHex(toHex(color.r, color.g, color.b)),
+        name: color.name
+      }));
     }
     if (!importedColors.length) throw new Error("No colors were found in the file.");
+
+    importedColors = importedColors.map((color, index) => ({
+      ...color,
+      name: color.name?.trim() || `Color ${index + 1}`
+    }));
 
     colors = importedColors;
     currentPaletteId = null;
@@ -550,7 +568,7 @@ function initPaletteBuilder() {
     const name = nameInput.value.trim();
     if (!name) { nameInput.focus(); showToast(toast, "Enter a palette name."); return; }
     if (!colors.length) { showToast(toast, "Add at least one color first."); return; }
-    const records = colors.map((color, index) => ({ replacementHex: color.hex, name: `Color ${index + 1}` }));
+    const records = colors.map((color, index) => ({ replacementHex: color.hex, name: color.name || `Color ${index + 1}` }));
     try {
       if (currentPaletteId) await updatePalette(currentPaletteId, name, records, false, false, { source: "builder" });
       else currentPaletteId = await savePalette(name, records, false, false, { source: "builder" });
