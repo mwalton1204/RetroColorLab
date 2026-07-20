@@ -550,10 +550,22 @@ function initSpriteRecolorer() {
       return;
     }
 
-    mappings.forEach(mapping => {
-      const { r, g, b } = hexToRgb(mapping.replacementHex);
-      const value = Math.max(r, g, b);
+    const orderedMappings = [...mappings].sort((a, b) => {
+      const aRgb = hexToRgb(a.source.hex);
+      const bRgb = hexToRgb(b.source.hex);
+      return Math.max(bRgb.r, bRgb.g, bRgb.b) - Math.max(aRgb.r, aRgb.g, aRgb.b);
+    });
+    orderedMappings.forEach((mapping, index) => {
+      const value = orderedMappings.length <= 1
+        ? 255
+        : Math.round(255 - (index / (orderedMappings.length - 1)) * 255);
       mapping.replacementHex = toHex(value, value, value);
+      const originalIndex = mappings.findIndex(item => item.id === mapping.id);
+      names[originalIndex] = index === 0
+        ? "White"
+        : index === orderedMappings.length - 1
+          ? "Black"
+          : `Color ${index}`;
     });
     renderSwapControls();
     recolorSprite();
