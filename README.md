@@ -68,6 +68,7 @@ It is designed for pixel artists, retro game developers, and ROM hackers working
 - Import `.pal`, `.gpl`, and `.txt` files, then explicitly select the format used by the file contents before parsing
 - Save new palettes locally in IndexedDB; changes to reopened palettes autosave after edits
 - Search and sort saved palettes by date, name, or color count
+- Create, rename, collapse, and delete palette folders; drag saved palettes between folders or back into the Unfiled group (deleting a folder preserves its palettes in Unfiled)
 - Preview every saved palette as an ordered, evenly divided color strip
 - Reopen or delete saved palettes from the full-height, independently scrollable library
 - Share the same saved-palette library with Sprite Lab
@@ -82,6 +83,7 @@ RetroColorLab uses a small, dependency-light architecture organized around focus
 - **Shared color model:** the converter, Sprite Lab, and Palette Manager use the same parsing and formatting utilities for RGB888, RGB555, RGB565, RGB444, and HEX
 - **Format-aware color controls:** Pickr is extended with custom inputs that understand the project's retro color formats instead of accepting only HEX
 - **Persistent local library:** IndexedDB stores named palettes created in Palette Manager or captured from Sprite Lab; reopened Palette Manager entries use debounced autosaving and flush pending edits before switching palettes
+- **Persistent palette organization:** IndexedDB also stores named palette folders and each palette's optional folder assignment
 - **Shared palette file pipeline:** Palette Manager and Sprite Lab use the same JASC, GIMP, RGB888, RGB555, RGB565, and RGB444 generation and parsing utilities
 - **Explicit import interpretation:** Palette Manager asks which format is stored inside an imported file instead of assuming its encoding from an ambiguous extension such as `.pal`
 - **Semantic palette matching:** saved sprite palettes retain information about white and black slots so those colors can be matched by identity when applied to another sprite

@@ -13,11 +13,20 @@ function initPaletteBuilder() {
   const importFormatDialog = document.getElementById("builderImportFormatDialog");
   const importFormatOptions = document.getElementById("builderImportFormatOptions");
   const importFormatCancel = document.getElementById("builderImportFormatCancel");
+  const folderDialog = document.getElementById("paletteFolderDialog");
+  const folderForm = document.getElementById("paletteFolderForm");
+  const folderDialogTitle = document.getElementById("paletteFolderDialogTitle");
+  const folderDeleteHelp = document.getElementById("paletteFolderDeleteHelp");
+  const folderNameControl = document.getElementById("paletteFolderNameControl");
+  const folderNameInput = document.getElementById("paletteFolderName");
+  const folderCancelButton = document.getElementById("paletteFolderCancelBtn");
+  const folderSubmitButton = document.getElementById("paletteFolderSubmitBtn");
   const saveButton = document.getElementById("saveBuilderPaletteBtn");
   const saveButtonLabel = document.getElementById("builderSavePaletteLabel");
   const copyButton = document.getElementById("copyBuilderPaletteBtn");
   const downloadButton = document.getElementById("downloadBuilderPaletteBtn");
   const savedList = document.getElementById("builderSavedPalettes");
+  const addFolderButton = document.getElementById("builderAddFolderBtn");
   const librarySearchButton = document.getElementById("builderPaletteSearchBtn");
   const librarySortButton = document.getElementById("builderPaletteSortBtn");
   const librarySearchControl = document.getElementById("builderPaletteSearchControl");
@@ -31,11 +40,16 @@ function initPaletteBuilder() {
   let currentPaletteId = null;
   let dirty = false;
   let libraryPalettes = [];
+  let libraryFolders = [];
+  const collapsedFolderIds = new Set();
+  let draggedPaletteId = null;
   let rowPickrs = [];
   let draggedColorIndex = null;
   let pendingImportText = null;
   let pendingImportFilename = null;
   let autosaveTimer = null;
+  let folderDialogMode = "create";
+  let folderDialogId = null;
 
   function normalizeSavedColor(entry) {
     const hex = typeof entry === "string" ? entry : entry?.replacementHex;
@@ -203,17 +217,19 @@ function initPaletteBuilder() {
     };
     palettes.sort(sorters[librarySort.value] || sorters.newest);
     savedList.replaceChildren();
-    if (!palettes.length) {
+    if (!palettes.length && (query || !libraryFolders.length)) {
       const empty = document.createElement("p");
       empty.className = "saved-palettes-empty";
-      empty.textContent = libraryPalettes.length ? "No palettes match your search." : "No saved palettes.";
+      empty.textContent = query ? "No palettes match your search." : "No saved palettes.";
       savedList.appendChild(empty);
       return;
     }
-    palettes.forEach(palette => {
+
+    function createPaletteItem(palette) {
       const item = document.createElement("div");
       item.className = "saved-palette-item";
       item.dataset.id = String(palette.id);
+      item.draggable = true;
       item.tabIndex = 0;
       item.setAttribute("role", "button");
       item.setAttribute("aria-label", `Edit ${palette.name}`);
@@ -252,12 +268,72 @@ function initPaletteBuilder() {
       } else {
         item.appendChild(row);
       }
-      savedList.appendChild(item);
+      return item;
+    }
+
+    function createFolderGroup(folder, folderPalettes) {
+      const folderId = folder ? String(folder.id) : "";
+      const collapsed = folder ? collapsedFolderIds.has(folderId) : false;
+      const group = document.createElement("section");
+      group.className = "saved-palette-folder";
+      group.dataset.folderId = folderId;
+
+      const header = document.createElement("div");
+      header.className = "saved-palette-folder-head";
+      header.innerHTML = `
+        <button class="saved-palette-folder-toggle" type="button" data-folder-id="${folderId}" aria-expanded="${!collapsed}">
+          <span class="material-symbols-rounded" aria-hidden="true">${folder ? "folder" : "folder_open"}</span>
+          <span class="saved-palette-folder-name">${escapeHtml(folder?.name || "Unfiled")}</span>
+          <span class="saved-palette-folder-count">${folderPalettes.length}</span>
+          ${folder ? '<span class="saved-palette-folder-chevron material-symbols-rounded" aria-hidden="true">expand_more</span>' : ""}
+        </button>
+        ${folder ? `<div class="saved-palette-folder-actions">
+          <button class="preview-download-btn saved-palette-folder-rename" type="button" data-folder-id="${folderId}" aria-label="Rename ${escapeHtml(folder.name)}" title="Rename folder"><span class="material-symbols-rounded" aria-hidden="true">edit</span></button>
+          <button class="preview-download-btn saved-palette-folder-delete" type="button" data-folder-id="${folderId}" aria-label="Delete ${escapeHtml(folder.name)}" title="Delete folder"><span class="material-symbols-rounded" aria-hidden="true">delete</span></button>
+        </div>` : ""}`;
+
+      const contents = document.createElement("div");
+      contents.className = "saved-palette-folder-contents";
+      contents.hidden = collapsed;
+      if (folderPalettes.length) {
+        folderPalettes.forEach(palette => contents.appendChild(createPaletteItem(palette)));
+      } else {
+        const empty = document.createElement("p");
+        empty.className = "saved-palette-folder-empty";
+        empty.textContent = "Drop palettes here";
+        contents.appendChild(empty);
+      }
+      group.append(header, contents);
+      return group;
+    }
+
+    libraryFolders.forEach(folder => {
+      const folderPalettes = palettes.filter(palette => Number(palette.folderId) === Number(folder.id));
+      if (!query || folderPalettes.length) savedList.appendChild(createFolderGroup(folder, folderPalettes));
     });
+
+    const unfiledPalettes = palettes.filter(palette => palette.folderId === null || !libraryFolders.some(folder => Number(folder.id) === Number(palette.folderId)));
+    if (libraryFolders.length) {
+      savedList.appendChild(createFolderGroup(null, unfiledPalettes));
+    } else {
+      unfiledPalettes.forEach(palette => savedList.appendChild(createPaletteItem(palette)));
+    }
+
+    if (!savedList.children.length) {
+      const empty = document.createElement("p");
+      empty.className = "saved-palettes-empty";
+      empty.textContent = "No palettes match your search.";
+      savedList.appendChild(empty);
+    }
   }
 
   async function refreshLibrary() {
-    try { libraryPalettes = await listPalettes(); } catch { libraryPalettes = []; }
+    try {
+      [libraryPalettes, libraryFolders] = await Promise.all([listPalettes(), listPaletteFolders()]);
+    } catch {
+      libraryPalettes = [];
+      libraryFolders = [];
+    }
     renderLibrary();
   }
 
@@ -295,6 +371,40 @@ function initPaletteBuilder() {
   librarySortButton.addEventListener("click", () => toggleLibraryControl(librarySortButton, librarySortControl, librarySort));
   librarySearch.addEventListener("input", renderLibrary);
   librarySort.addEventListener("change", renderLibrary);
+
+  function openFolderDialog(mode, folder = null) {
+    folderDialogMode = mode;
+    folderDialogId = folder?.id ?? null;
+    const deleting = mode === "delete";
+    folderDialogTitle.textContent = mode === "create" ? "Create Folder" : mode === "rename" ? "Save" : "Delete Folder";
+    folderDeleteHelp.hidden = !deleting;
+    folderNameControl.hidden = deleting;
+    folderNameInput.required = !deleting;
+    folderNameInput.value = mode === "rename" ? folder.name : "";
+    folderSubmitButton.textContent = mode === "create" ? "Create Folder" : mode === "rename" ? "Save" : "Delete Folder";
+    folderDialog.showModal();
+    if (!deleting) folderNameInput.focus();
+  }
+
+  addFolderButton.addEventListener("click", () => openFolderDialog("create"));
+  folderCancelButton.addEventListener("click", () => folderDialog.close());
+  folderForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    const name = folderNameInput.value.trim();
+    if (folderDialogMode !== "delete" && !name) { folderNameInput.focus(); return; }
+    try {
+      if (folderDialogMode === "create") await createPaletteFolder(name);
+      if (folderDialogMode === "rename") await renamePaletteFolder(folderDialogId, name);
+      if (folderDialogMode === "delete") {
+        collapsedFolderIds.delete(String(folderDialogId));
+        await deletePaletteFolder(folderDialogId);
+      }
+      folderDialog.close();
+      await refreshLibrary();
+      document.dispatchEvent(new CustomEvent("palette-library-changed"));
+      showToast(toast, folderDialogMode === "create" ? `Folder “${name}” created.` : folderDialogMode === "rename" ? `Folder renamed to “${name}”.` : "Folder deleted; palettes moved to Unfiled.");
+    } catch { showToast(toast, "Folder could not be updated."); }
+  });
 
   list.addEventListener("change", event => {
     const input = event.target.closest(".palette-builder-value");
@@ -472,6 +582,28 @@ function initPaletteBuilder() {
   });
 
   savedList.addEventListener("click", async event => {
+    const folderToggle = event.target.closest(".saved-palette-folder-toggle[data-folder-id]");
+    if (folderToggle?.dataset.folderId) {
+      const folderId = folderToggle.dataset.folderId;
+      if (collapsedFolderIds.has(folderId)) collapsedFolderIds.delete(folderId);
+      else collapsedFolderIds.add(folderId);
+      renderLibrary();
+      return;
+    }
+    const renameButton = event.target.closest(".saved-palette-folder-rename[data-folder-id]");
+    if (renameButton) {
+      const folder = libraryFolders.find(entry => Number(entry.id) === Number(renameButton.dataset.folderId));
+      if (!folder) return;
+      openFolderDialog("rename", folder);
+      return;
+    }
+    const deleteFolderButton = event.target.closest(".saved-palette-folder-delete[data-folder-id]");
+    if (deleteFolderButton) {
+      const folder = libraryFolders.find(entry => Number(entry.id) === Number(deleteFolderButton.dataset.folderId));
+      if (!folder) return;
+      openFolderDialog("delete", folder);
+      return;
+    }
     const deleteButton = event.target.closest(".builder-delete-palette");
     const loadItem = deleteButton ? null : event.target.closest(".saved-palette-item[data-id]");
     const id = Number((loadItem || deleteButton)?.dataset.id);
@@ -507,6 +639,45 @@ function initPaletteBuilder() {
     if (!item || (event.key !== "Enter" && event.key !== " ")) return;
     event.preventDefault();
     item.click();
+  });
+
+  savedList.addEventListener("dragstart", event => {
+    const item = event.target.closest(".saved-palette-item[data-id]");
+    if (!item || event.target.closest("button")) return;
+    draggedPaletteId = Number(item.dataset.id);
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", String(draggedPaletteId));
+    item.classList.add("is-dragging");
+  });
+
+  savedList.addEventListener("dragover", event => {
+    if (!draggedPaletteId) return;
+    const folder = event.target.closest(".saved-palette-folder[data-folder-id]");
+    if (!folder) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    savedList.querySelectorAll(".is-drop-target").forEach(target => target.classList.remove("is-drop-target"));
+    folder.classList.add("is-drop-target");
+  });
+
+  savedList.addEventListener("drop", async event => {
+    const folder = event.target.closest(".saved-palette-folder[data-folder-id]");
+    if (!folder || !draggedPaletteId) return;
+    event.preventDefault();
+    const paletteId = draggedPaletteId;
+    const folderId = folder.dataset.folderId ? Number(folder.dataset.folderId) : null;
+    draggedPaletteId = null;
+    try {
+      await movePaletteToFolder(paletteId, folderId);
+      await refreshLibrary();
+      document.dispatchEvent(new CustomEvent("palette-library-changed"));
+      showToast(toast, folderId ? "Palette moved to folder." : "Palette moved out of folder.");
+    } catch { showToast(toast, "Palette could not be moved."); }
+  });
+
+  savedList.addEventListener("dragend", () => {
+    draggedPaletteId = null;
+    savedList.querySelectorAll(".is-dragging, .is-drop-target").forEach(target => target.classList.remove("is-dragging", "is-drop-target"));
   });
 
   document.addEventListener("palette-library-changed", refreshLibrary);

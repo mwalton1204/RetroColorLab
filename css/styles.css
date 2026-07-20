@@ -567,7 +567,25 @@ button:disabled { cursor: not-allowed; opacity: 0.38; filter: none; transform: n
 .saved-palettes-list::-webkit-scrollbar { width: 6px; }
 .saved-palettes-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.14); border-radius: 999px; }
 .saved-palettes-empty { color: var(--muted-2); font-size: 0.85rem; margin: 0; text-align: center; padding: 10px 0; }
+.saved-palette-folder { min-width: 0; padding: 5px; border: 1px solid transparent; border-radius: var(--radius-md); transition: border-color 90ms ease, background 90ms ease; }
+.saved-palette-folder + .saved-palette-folder { margin-top: 2px; }
+.saved-palette-folder.is-drop-target { border-color: rgba(127,199,255,0.4); background: rgba(127,199,255,0.09); }
+.saved-palette-folder-head { display: flex; align-items: center; gap: 4px; margin-bottom: 5px; }
+.saved-palette-folder-toggle { min-width: 0; min-height: 30px; flex: 1 1 auto; padding: 4px 6px; display: flex; align-items: center; gap: 6px; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--muted); box-shadow: none; text-align: left; }
+.saved-palette-folder-toggle:hover { color: var(--text); background: rgba(255,255,255,0.055); }
+.saved-palette-folder-toggle[data-folder-id=""] { cursor: default; }
+.saved-palette-folder-toggle .material-symbols-rounded { flex: 0 0 auto; font-size: 18px; }
+.saved-palette-folder-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.8rem; font-weight: 900; }
+.saved-palette-folder-count { color: var(--muted-2); font-size: 0.72rem; }
+.saved-palette-folder-chevron { margin-left: auto; transition: transform 90ms ease; }
+.saved-palette-folder-toggle[aria-expanded="false"] .saved-palette-folder-chevron { transform: rotate(-90deg); }
+.saved-palette-folder-actions { display: flex; align-items: center; gap: 4px; }
+.saved-palette-folder-rename, .saved-palette-folder-delete { flex: 0 0 34px; }
+.saved-palette-folder-contents { display: grid; gap: 6px; }
+.saved-palette-folder-contents[hidden] { display: none; }
+.saved-palette-folder-empty { margin: 0; padding: 10px 8px; border: 1px dashed rgba(255,255,255,0.1); border-radius: var(--radius-sm); color: var(--muted-2); font-size: 0.75rem; text-align: center; }
 .saved-palette-item { min-width: 0; border-radius: var(--radius-sm); cursor: pointer; outline: none; }
+.saved-palette-item.is-dragging { opacity: 0.42; }
 .saved-palette-item:hover .saved-palette-row, .saved-palette-item:focus-visible .saved-palette-row { background: rgba(127,199,255,0.08); border-color: rgba(127,199,255,0.24); }
 .saved-palette-item:focus-visible { box-shadow: 0 0 0 2px rgba(127,199,255,0.28); }
 .saved-palette-item.is-editing .saved-palette-row { background: rgba(127,199,255,0.12); border-color: rgba(127,199,255,0.38); }
@@ -675,11 +693,17 @@ button:disabled { cursor: not-allowed; opacity: 0.38; filter: none; transform: n
   font-weight: 800;
 }
 .palette-format-dialog-options button:hover { background: rgba(255, 255, 255, 0.055); color: var(--text); transform: none; filter: none; }
-.palette-format-dialog-cancel { width: 100%; justify-content: center; font-size: 0.85rem; }
+.palette-format-dialog-cancel { width: 100%; justify-content: center; }
+.palette-format-dialog .palette-format-dialog-cancel,
+.palette-format-dialog .save-sprite-palette-actions button { min-height: 34px; height: 34px; padding: 0 10px; font-size: 0.8rem; font-weight: 900; }
 .save-sprite-palette-dialog { max-width: 380px; }
 .save-sprite-palette-dialog h3 { margin-bottom: 4px; }
 .save-sprite-palette-dialog label { margin-bottom: -4px; }
 .save-sprite-palette-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+.palette-folder-dialog { max-width: 380px; }
+.palette-folder-dialog h3 { margin-bottom: 4px; }
+.palette-folder-dialog .builder-text-input::placeholder { color: rgba(159,178,194,0.46); opacity: 1; font-style: italic; }
+.palette-folder-dialog [hidden] { display: none; }
 .import-saved-palette-dialog { max-width: 420px; }
 .import-saved-palette-dialog h3 { margin-bottom: 4px; }
 .import-saved-palette-title-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }

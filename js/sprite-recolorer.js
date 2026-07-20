@@ -565,7 +565,11 @@ function initSpriteRecolorer() {
         ? "White"
         : index === orderedMappings.length - 1
           ? "Black"
-          : `Color ${index}`;
+          : index === 1
+            ? "Light Gray"
+            : index === orderedMappings.length - 2
+              ? "Dark Gray"
+              : `Gray ${index}`;
     });
     renderSwapControls();
     recolorSprite();

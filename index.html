@@ -256,6 +256,7 @@
           <div class="palette-builder-library-head">
             <h3>Saved palettes</h3>
             <div class="palette-builder-library-tools">
+              <button id="builderAddFolderBtn" class="secondary builder-library-tool-btn" type="button" aria-label="Create palette folder" title="Create palette folder"><span class="material-symbols-rounded" aria-hidden="true">create_new_folder</span></button>
               <button id="builderPaletteSortBtn" class="secondary builder-library-tool-btn" type="button" aria-label="Sort saved palettes" aria-controls="builderPaletteSortControl" aria-expanded="false" title="Sort saved palettes"><span class="material-symbols-rounded" aria-hidden="true">sort</span></button>
               <button id="builderPaletteSearchBtn" class="secondary builder-library-tool-btn" type="button" aria-label="Search saved palettes" aria-controls="builderPaletteSearchControl" aria-expanded="false" title="Search saved palettes"><span class="material-symbols-rounded" aria-hidden="true">search</span></button>
             </div>
@@ -380,6 +381,22 @@
     </div>
   </dialog>
 
+  <dialog id="paletteFolderDialog" class="palette-format-dialog palette-folder-dialog">
+    <form id="paletteFolderForm" class="palette-format-dialog-inner">
+      <div>
+        <h3 id="paletteFolderDialogTitle">Create Folder</h3>
+        <p id="paletteFolderDeleteHelp" class="palette-format-dialog-label" hidden>Deleting this folder will move its palettes to Unfiled. No palettes will be deleted.</p>
+      </div>
+      <div id="paletteFolderNameControl">
+        <input id="paletteFolderName" class="builder-text-input" type="text" placeholder="EX: Character Palettes" aria-label="Folder name" maxlength="64" required />
+      </div>
+      <div class="save-sprite-palette-actions">
+        <button id="paletteFolderCancelBtn" class="secondary" type="button">Cancel</button>
+        <button id="paletteFolderSubmitBtn" class="secondary" type="submit">Create Folder</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="saveSpritePaletteDialog" class="palette-format-dialog save-sprite-palette-dialog">
     <form id="saveSpritePaletteForm" class="palette-format-dialog-inner" method="dialog">
       <div>
@@ -390,7 +407,7 @@
       <input id="saveSpritePaletteName" class="builder-text-input" type="text" maxlength="64" required />
       <div class="save-sprite-palette-actions">
         <button id="cancelSaveSpritePaletteBtn" class="secondary" type="button">Cancel</button>
-        <button type="submit">Save palette</button>
+        <button class="secondary" type="submit">Save palette</button>
       </div>
     </form>
   </dialog>
