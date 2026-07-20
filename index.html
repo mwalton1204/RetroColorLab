@@ -27,11 +27,13 @@
   </header>
 
   <main id="top" class="app">
-    <section class="hero">
-      <div class="hero-card">
-        <span class="eyebrow">Retro color tools, in the browser</span>
-        <h1>Convert palette formats. Recolor sprites.</h1>
-        <p class="subtitle">Paste color values to convert between RGB555, RGB888, HEX, and more. Upload a sprite to detect its colors automatically — then swap, name, and export palette files for your editor.</p>
+    <section class="hero-panel" aria-labelledby="heroTitle">
+      <div class="hero-icon" aria-hidden="true">
+        <span class="material-symbols-rounded">palette</span>
+      </div>
+      <div class="hero-copy">
+        <h1 id="heroTitle">Browser-Based Toolkit for Retro Palette Workflows</h1>
+        <p>Convert color formats, preview pixel-perfect sprite recolors, and create and export palettes.</p>
       </div>
     </section>
 
@@ -41,6 +43,9 @@
           <h2>Color Format Converter</h2>
           <p class="section-copy">Convert colors between RGB555, RGB888, RGB565, RGB444, and HEX formats.</p>
         </div>
+        <button class="secondary section-collapse-btn" type="button" aria-label="Collapse Color Format Converter" aria-expanded="true" title="Collapse section">
+          <span class="material-symbols-rounded" aria-hidden="true">expand_less</span>
+        </button>
       </div>
 
       <div class="converter-card">
@@ -108,6 +113,9 @@
           <h2>Sprite Lab</h2>
           <p class="section-copy">Upload a sprite image. Colors are detected automatically — swap them with the pickers, then export palette files in JASC, GIMP, or plain-text formats.</p>
         </div>
+        <button class="secondary section-collapse-btn" type="button" aria-label="Collapse Sprite Lab" aria-expanded="true" title="Collapse section">
+          <span class="material-symbols-rounded" aria-hidden="true">expand_less</span>
+        </button>
       </div>
 
       <div id="spriteEmptyUpload" class="sprite-empty-upload">
@@ -247,6 +255,9 @@
           <h2>Palette Manager</h2>
           <p class="section-copy">Create, arrange, and save reusable palettes without uploading a sprite.</p>
         </div>
+        <button class="secondary section-collapse-btn" type="button" aria-label="Collapse Palette Manager" aria-expanded="true" title="Collapse section">
+          <span class="material-symbols-rounded" aria-hidden="true">expand_less</span>
+        </button>
       </div>
 
       <div class="palette-builder-layout">
