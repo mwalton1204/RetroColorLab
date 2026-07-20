@@ -9,7 +9,7 @@ function initConverter() {
   const inputFormatMenu = document.getElementById("inputFormatMenu");
   const outputFormatMenu = document.getElementById("outputFormatMenu");
   const pickerEl = document.getElementById("colorPicker");
-  const toast = document.getElementById("paletteToast");
+  const toast = document.getElementById("appToast");
 
   let inputFormat = "RGB888";
   let outputFormat = "RGB555";

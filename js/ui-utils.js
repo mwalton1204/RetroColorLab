@@ -1,11 +1,21 @@
-function showToast(target, message) {
-  if (!target) return;
-  target.textContent = message;
-  window.clearTimeout(Number(target.dataset.timerId || 0));
-  const timerId = window.setTimeout(() => {
-    target.textContent = "";
-  }, 1600);
-  target.dataset.timerId = String(timerId);
+let appToastTimer = 0;
+let appToastClearTimer = 0;
+
+function showToast(_target, message) {
+  const toast = document.getElementById("appToast");
+  if (!toast || !message) return;
+  window.clearTimeout(appToastTimer);
+  window.clearTimeout(appToastClearTimer);
+  toast.textContent = message;
+  if (typeof toast.showPopover === "function" && !toast.matches(":popover-open")) toast.showPopover();
+  window.requestAnimationFrame(() => toast.classList.add("is-visible"));
+  appToastTimer = window.setTimeout(() => {
+    toast.classList.remove("is-visible");
+    appToastClearTimer = window.setTimeout(() => {
+      if (typeof toast.hidePopover === "function" && toast.matches(":popover-open")) toast.hidePopover();
+      toast.textContent = "";
+    }, 160);
+  }, 2200);
 }
 
 async function copyText(text) {

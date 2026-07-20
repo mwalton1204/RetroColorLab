@@ -89,6 +89,7 @@ RetroColorLab uses a small, dependency-light architecture organized around focus
 - **Semantic palette matching:** saved sprite palettes retain information about white and black slots so those colors can be matched by identity when applied to another sprite
 - **Responsive integer scaling:** Fit mode calculates the largest whole-number scale supported by the available preview area
 - **Client-side privacy:** `FileReader`, Canvas, and IndexedDB keep uploaded artwork and user-created palettes on the device
+- **Universal notifications:** feedback is routed through a fixed page-wide toast that floats above the interface without shifting nearby controls
 
 ---
 

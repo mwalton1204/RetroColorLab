@@ -98,7 +98,6 @@
 
           <p id="error" class="error" role="alert"></p>
 
-          <p id="paletteToast" class="toast" aria-live="polite"></p>
         </div>
       </div>
     </section>
@@ -196,7 +195,6 @@
             </div>
           </div>
 
-          <p id="spriteToast" class="toast" aria-live="polite"></p>
         </div>
 
         <div class="sprite-preview-stack workspace-card preview-workspace-card">
@@ -337,7 +335,6 @@
               <span class="material-symbols-rounded" aria-hidden="true">download</span>
             </button>
           </div>
-          <p id="builderToast" class="toast" aria-live="polite"></p>
         </div>
 
       </div>
@@ -443,6 +440,8 @@
       <button id="cancelImportSavedPaletteBtn" type="button" class="secondary palette-format-dialog-cancel">Cancel</button>
     </div>
   </dialog>
+
+  <div id="appToast" class="app-toast" role="status" aria-live="polite" aria-atomic="true" popover="manual"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>

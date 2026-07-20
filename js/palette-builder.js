@@ -33,7 +33,7 @@ function initPaletteBuilder() {
   const librarySortControl = document.getElementById("builderPaletteSortControl");
   const librarySearch = document.getElementById("builderPaletteSearch");
   const librarySort = document.getElementById("builderPaletteSort");
-  const toast = document.getElementById("builderToast");
+  const toast = document.getElementById("appToast");
 
   let displayFormat = "palettes/rgb888.txt";
   let colors = [];

@@ -19,7 +19,7 @@ function initSpriteRecolorer() {
   const previewEmpty = document.getElementById("previewEmpty");
   const downloadSpriteBtn = document.getElementById("downloadSpriteBtn");
   const downloadIndexedBtn = document.getElementById("downloadIndexedBtn");
-  const spriteToast = document.getElementById("spriteToast");
+  const spriteToast = document.getElementById("appToast");
   const paletteFileFormatButton = document.getElementById("paletteFileFormatButton");
   const paletteFileFormatMenu = document.getElementById("paletteFileFormatMenu");
   const paletteFileText = document.getElementById("paletteFileText");
