@@ -12,7 +12,7 @@ It is designed for pixel artists, retro game developers, and ROM hackers working
 
 ## Project highlights
 
-- **A complete browser-based workflow:** convert a color, add it to a reusable palette, apply that palette to a sprite, and export the result without leaving the page
+- **A complete browser-based workflow:** convert retro color formats, build reusable palettes, apply them to sprites, and export the result without leaving the page
 - **Purpose-built image processing:** unique sprite colors are detected from raw pixel data and recolored in real time through an efficient lookup-based canvas pass
 - **Pixel-art-aware previews:** zoom modes use integer scaling so artwork remains crisp and representative at every supported size
 - **Shared application state:** palettes created manually or extracted from sprites use the same IndexedDB-backed library and can move between tools
@@ -30,7 +30,6 @@ It is designed for pixel artists, retro game developers, and ROM hackers working
 - Choose input and output formats independently
 - Enter a value manually or use the integrated color picker
 - Copy the converted value with one click
-- Send the current color directly to the Palette Manager
 
 ### Sprite Lab
 
@@ -60,7 +59,7 @@ It is designed for pixel artists, retro game developers, and ROM hackers working
 ### Palette Manager
 
 - Create required-name palettes without uploading a sprite
-- Add colors from the Palette Manager or send them directly from the Color Format Converter
+- Add and edit colors directly in the Palette Manager
 - Edit colors with the same picker and inline value controls used by Sprite Lab's Color Manager
 - Drag colors to reorder them, or copy and delete individual entries with compact row actions
 - View and edit a synchronized text representation of the working palette

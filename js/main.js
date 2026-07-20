@@ -1,5 +1,5 @@
 const paletteBuilder = initPaletteBuilder();
-const converter = initConverter(hex => paletteBuilder.addColor(hex, { focus: true }));
+const converter = initConverter();
 const spriteRecolorer = initSpriteRecolorer();
 
 initFormatMenus((type, value, label) => {

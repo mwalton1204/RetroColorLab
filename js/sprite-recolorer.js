@@ -171,7 +171,7 @@ function initSpriteRecolorer() {
       row.style.setProperty("--replacement-color", mapping.replacementHex);
       row.innerHTML = `
         <span class="swap-drag-handle material-symbols-rounded" draggable="true" data-drag-mapping-id="${mapping.id}" aria-label="Drag to reorder color" title="Drag to reorder">drag_indicator</span>
-        <div class="editable-color">
+        <div class="color-picker-control">
           <div class="pickr-anchor swap-pickr"></div>
         </div>
         <input

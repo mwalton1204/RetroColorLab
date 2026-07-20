@@ -7,7 +7,6 @@ function initPaletteBuilder() {
   const count = document.getElementById("builderColorCount");
   const list = document.getElementById("builderColorList");
   const paletteText = document.getElementById("builderPaletteText");
-  const newButton = document.getElementById("newBuilderPaletteBtn");
   const clearButton = document.getElementById("clearBuilderPaletteBtn");
   const importButton = document.getElementById("importBuilderPaletteBtn");
   const importInput = document.getElementById("importBuilderPaletteInput");
@@ -127,7 +126,7 @@ function initPaletteBuilder() {
       handle.textContent = "drag_indicator";
 
       const editableColor = document.createElement("div");
-      editableColor.className = "editable-color";
+      editableColor.className = "color-picker-control";
       const pickerAnchor = document.createElement("div");
       pickerAnchor.className = "pickr-anchor palette-builder-row-pickr";
       editableColor.appendChild(pickerAnchor);
@@ -283,7 +282,6 @@ function initPaletteBuilder() {
     addColor(hex);
   });
   nameInput.addEventListener("input", () => setDirty());
-  newButton.addEventListener("click", async () => { await flushAutosave(); resetPalette(); });
   clearButton.addEventListener("click", async () => { await flushAutosave(); resetPalette(); });
 
   function toggleLibraryControl(button, control, focusTarget) {

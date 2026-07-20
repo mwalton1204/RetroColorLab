@@ -47,8 +47,17 @@
         <div class="field-stack">
           <div class="converter-io-row">
             <div class="converter-field">
+              <div class="input-picker-wrap converter-input-wrap">
+                <input id="input" class="converter-value" type="text" spellcheck="false" autocomplete="off" placeholder="EX: RGB 099, 181, 206" aria-label="Input color value" />
+                <div class="color-picker-control">
+                  <div id="colorPicker" class="pickr-anchor" aria-label="Pick color"></div>
+                </div>
+                <button id="clearPaletteBtn" class="output-copy-btn converter-input-clear" type="button" aria-label="Clear converter" title="Clear converter" disabled>
+                  <span class="material-symbols-rounded" aria-hidden="true">ink_eraser</span>
+                </button>
+              </div>
               <div class="converter-field-head">
-                <label for="input">Input</label>
+                <span class="converter-format-label">Input Format:</span>
                 <div class="format-menu converter-field-format" data-format-menu="input">
                   <button id="inputFormatButton" class="format-menu-button" type="button" aria-haspopup="listbox" aria-expanded="false">RGB888</button>
                   <div id="inputFormatMenu" class="format-menu-list" role="listbox" aria-label="Input format">
@@ -60,17 +69,19 @@
                   </div>
                 </div>
               </div>
-              <div class="input-picker-wrap">
-                <input id="input" class="converter-value" type="text" spellcheck="false" autocomplete="off" placeholder="EX: RGB 099, 181, 206" />
-                <div id="colorPicker" class="pickr-anchor input-picker-inline" aria-label="Pick color"></div>
-              </div>
             </div>
 
-            <div class="converter-arrow" aria-hidden="true">→</div>
+            <div class="converter-arrow" aria-hidden="true"><span class="material-symbols-rounded">arrow_forward</span></div>
 
             <div class="converter-field">
+              <div class="input-picker-wrap converter-output-wrap">
+                <input id="convertedOutput" class="converter-value converter-output" type="text" spellcheck="false" readonly aria-readonly="true" aria-label="Converted output value" />
+                <button id="copyRgbBtn" class="output-copy-btn" type="button" aria-label="Copy output" title="Copy output" disabled>
+                  <span class="material-symbols-rounded">content_copy</span>
+                </button>
+              </div>
               <div class="converter-field-head">
-                <label for="convertedOutput">Output</label>
+                <span class="converter-format-label">Output Format:</span>
                 <div class="format-menu converter-field-format" data-format-menu="output">
                   <button id="outputFormatButton" class="format-menu-button" type="button" aria-haspopup="listbox" aria-expanded="false">RGB555</button>
                   <div id="outputFormatMenu" class="format-menu-list" role="listbox" aria-label="Output format">
@@ -82,21 +93,10 @@
                   </div>
                 </div>
               </div>
-              <div class="input-picker-wrap">
-                <input id="convertedOutput" class="converter-value converter-output" type="text" spellcheck="false" readonly aria-readonly="true" />
-                <button id="copyRgbBtn" class="output-copy-btn" type="button" aria-label="Copy output" title="Copy output" disabled>
-                  <span class="material-symbols-rounded">content_copy</span>
-                </button>
-              </div>
             </div>
           </div>
 
           <p id="error" class="error" role="alert"></p>
-
-          <div class="controls converter-bottom-controls">
-            <button id="clearPaletteBtn" class="secondary" type="button" disabled>Clear</button>
-            <button id="addToPaletteBtn" type="button" disabled>Add to palette</button>
-          </div>
 
           <p id="paletteToast" class="toast" aria-live="polite"></p>
         </div>
@@ -249,7 +249,6 @@
           <h2>Palette Manager</h2>
           <p class="section-copy">Create, arrange, and save reusable palettes without uploading a sprite.</p>
         </div>
-        <button id="newBuilderPaletteBtn" class="secondary" type="button">New palette</button>
       </div>
 
       <div class="palette-builder-layout">
