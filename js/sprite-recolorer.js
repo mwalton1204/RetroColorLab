@@ -399,7 +399,7 @@ function initSpriteRecolorer() {
 
     renderSwapControls();
     recolorSprite();
-    showToast(spriteToast, "Palette preview applied.");
+      showToast(spriteToast, "Palette changes applied.");
   }
 
   function setPaletteFileFormat(value, label) {
@@ -592,7 +592,7 @@ function initSpriteRecolorer() {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      showToast(spriteToast, "Preview PNG downloaded.");
+      showToast(spriteToast, "Recolored PNG downloaded.");
     } catch {
       showToast(spriteToast, "Download failed.");
     }
@@ -685,13 +685,13 @@ function initSpriteRecolorer() {
     link.click();
     link.remove();
     URL.revokeObjectURL(objectUrl);
-    showToast(spriteToast, "Palette file downloaded.");
+    showToast(spriteToast, "Palette downloaded.");
   });
 
   copyPaletteFileBtn.addEventListener("click", async () => {
     if (!paletteFileText.value.trim() || paletteFileText.value === "No sprite uploaded.") return;
     await copyText(paletteFileText.value);
-    showToast(spriteToast, "Palette file text copied.");
+    showToast(spriteToast, "Palette text copied.");
   });
 
   editPaletteFileBtn?.addEventListener("click", () => setPaletteFileEditable(!isPaletteFileEditable));
@@ -865,9 +865,9 @@ function initSpriteRecolorer() {
       await savePalette(name, colors, hasWhite, hasBlack);
       saveSpritePaletteDialog.close();
       document.dispatchEvent(new CustomEvent("palette-library-changed"));
-      showToast(spriteToast, `“${name}” saved to Palette Builder.`);
+      showToast(spriteToast, `“${name}” saved to Palette Manager.`);
     } catch {
-      showToast(spriteToast, "Failed to save palette.");
+      showToast(spriteToast, "Palette could not be saved.");
     }
   });
 

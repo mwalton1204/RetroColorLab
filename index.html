@@ -15,7 +15,7 @@
         <span class="material-symbols-rounded">palette</span>
       </div>
       <div class="hero-copy">
-        <h1 id="heroTitle">RetroPaletteLab</h1>
+        <h1 id="heroTitle">RetroColorLab</h1>
         <p>A client-side toolkit for retro color workflows. Color format conversion, real-time sprite recoloring, and persistent palette management.</p>
       </div>
     </section>
@@ -24,7 +24,7 @@
       <div class="section-head">
         <div>
           <h2>Color Format Converter</h2>
-          <p class="section-copy">Convert colors between RGB555, RGB888, RGB565, RGB444, and HEX formats.</p>
+          <p class="section-copy">Convert individual colors between RGB888, RGB555, RGB565, RGB444, and HEX.</p>
         </div>
         <button class="secondary section-collapse-btn" type="button" aria-label="Collapse Color Format Converter" aria-expanded="true" title="Collapse section">
           <span class="material-symbols-rounded" aria-hidden="true">expand_less</span>
@@ -94,7 +94,7 @@
       <div class="section-head sprite-head">
         <div>
           <h2>Sprite Lab</h2>
-          <p class="section-copy">Upload a sprite image. Colors are detected automatically — swap them with the pickers, then export palette files in JASC, GIMP, or plain-text formats.</p>
+          <p class="section-copy">Upload a sprite, edit its colors, and export the recolored image or palette.</p>
         </div>
         <button class="secondary section-collapse-btn" type="button" aria-label="Collapse Sprite Lab" aria-expanded="true" title="Collapse section">
           <span class="material-symbols-rounded" aria-hidden="true">expand_less</span>
@@ -105,7 +105,7 @@
         <span class="material-symbols-rounded sprite-empty-upload-icon" aria-hidden="true">image</span>
         <div class="sprite-empty-upload-copy">
           <h3>Upload a sprite image</h3>
-          <p>PNG, JPEG, WebP, or GIF · processed locally in your browser</p>
+          <p>PNG, JPEG, WebP, or GIF. Files stay on your device.</p>
         </div>
         <label class="button-link sprite-empty-upload-button" for="spriteUpload">
           <span class="material-symbols-rounded" aria-hidden="true">upload</span>
@@ -196,7 +196,7 @@
                   <label>Original</label>
                   <span class="info-tip">
                     <span class="info-tip-icon material-symbols-rounded" aria-label="Picker tool help">info</span>
-                    <span class="info-tip-content">Hover and click to select area &middot; Esc to clear</span>
+                    <span class="info-tip-content">Hover to preview a color. Click to pin. Press Esc to clear.</span>
                   </span>
                 </span>
               </div>
@@ -215,7 +215,7 @@
                 </button>
               </div>
               <div class="canvas-box">
-                <div id="previewEmpty" class="empty-state">Recolored image appears here.</div>
+                <div id="previewEmpty" class="empty-state">Your recolored sprite appears here.</div>
                 <canvas id="previewCanvas"></canvas>
               </div>
             </div>
@@ -236,7 +236,7 @@
       <div class="section-head palette-builder-section-head">
         <div>
           <h2>Palette Manager</h2>
-          <p class="section-copy">Create, arrange, and save reusable palettes without uploading a sprite.</p>
+          <p class="section-copy">Build, organize, import, and export custom color palettes.</p>
         </div>
         <button class="secondary section-collapse-btn" type="button" aria-label="Collapse Palette Manager" aria-expanded="true" title="Collapse section">
           <span class="material-symbols-rounded" aria-hidden="true">expand_less</span>
@@ -262,10 +262,10 @@
             <select id="builderPaletteSort" aria-label="Sort saved palettes">
               <option value="newest">Newest</option>
               <option value="oldest">Oldest</option>
-              <option value="name-asc">Alphabetical (Ascending)</option>
-              <option value="name-desc">Alphabetical (Descending)</option>
-              <option value="colors-asc">Color Count (Ascending)</option>
-              <option value="colors-desc">Color Count (Descending)</option>
+              <option value="name-asc">Name (A–Z)</option>
+              <option value="name-desc">Name (Z–A)</option>
+              <option value="colors-asc">Fewest Colors</option>
+              <option value="colors-desc">Most Colors</option>
             </select>
           </div>
           <div id="builderSavedPalettes" class="saved-palettes-list"></div>
@@ -334,13 +334,13 @@
       </div>
     </section>
 
-    <p class="footer-note">RetroColorLab runs entirely in your browser. Uploaded images are never sent anywhere.</p>
+    <p class="footer-note">RetroColorLab runs in your browser. Your images and palettes stay on your device.</p>
     <p class="footer-note">&copy; 2026 Michael Walton — MIT License</p>
   </main>
 
   <dialog id="paletteFormatDialog" class="palette-format-dialog">
     <div class="palette-format-dialog-inner">
-      <p class="palette-format-dialog-label">Select the format of the imported file:</p>
+      <p class="palette-format-dialog-label">Choose the imported palette's format.</p>
       <div id="paletteFormatDialogOptions" class="palette-format-dialog-options">
         <button type="button" data-value="palettes/jasc.pal">JASC .pal</button>
         <button type="button" data-value="palettes/gimp.gpl">GIMP .gpl</button>
@@ -357,7 +357,7 @@
     <div class="palette-format-dialog-inner">
       <div>
         <h3>Import Palette</h3>
-        <p class="palette-format-dialog-label">Select the color format used inside this file:</p>
+        <p class="palette-format-dialog-label">Choose the format used in this file.</p>
       </div>
       <div id="builderImportFormatOptions" class="palette-format-dialog-options">
         <button type="button" data-value="palettes/jasc.pal">JASC PAL</button>
@@ -392,7 +392,7 @@
     <form id="saveSpritePaletteForm" class="palette-format-dialog-inner" method="dialog">
       <div>
         <h3>Save as Palette</h3>
-        <p class="palette-format-dialog-label">Save the current recolored values to your palette library.</p>
+        <p class="palette-format-dialog-label">Save the current sprite colors to your palette library.</p>
       </div>
       <label for="saveSpritePaletteName">Palette name</label>
       <input id="saveSpritePaletteName" class="builder-text-input" type="text" maxlength="64" required />
@@ -413,7 +413,7 @@
             <button id="loadPaletteSearchBtn" class="secondary builder-library-tool-btn" type="button" aria-label="Search saved palettes" aria-controls="loadPaletteSearchControl" aria-expanded="false" title="Search saved palettes"><span class="material-symbols-rounded" aria-hidden="true">search</span></button>
           </div>
         </div>
-        <p class="palette-format-dialog-label">Choose a saved palette to apply to this sprite.</p>
+        <p class="palette-format-dialog-label">Choose a palette to apply to this sprite.</p>
       </div>
       <div id="loadPaletteSearchControl" class="saved-palette-dialog-control" hidden>
         <label class="sr-only" for="loadPaletteSearch">Search saved palettes</label>
@@ -424,10 +424,10 @@
         <select id="loadPaletteSort" aria-label="Sort saved palettes">
           <option value="newest">Newest</option>
           <option value="oldest">Oldest</option>
-          <option value="name-asc">Alphabetical (Ascending)</option>
-          <option value="name-desc">Alphabetical (Descending)</option>
-          <option value="colors-asc">Qty Colors (Ascending)</option>
-          <option value="colors-desc">Qty Colors (Descending)</option>
+          <option value="name-asc">Name (A–Z)</option>
+          <option value="name-desc">Name (Z–A)</option>
+          <option value="colors-asc">Fewest Colors</option>
+          <option value="colors-desc">Most Colors</option>
         </select>
       </div>
       <div id="importSavedPaletteList" class="saved-palettes-list import-saved-palette-list"></div>
