@@ -336,11 +336,18 @@ function initPaletteBuilder() {
     if (!handle) return;
     draggedColorIndex = Number(handle.dataset.index);
     event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", String(draggedColorIndex));
+    handle.closest(".palette-builder-color-row")?.classList.add("swap-row--dragging");
   });
 
   list.addEventListener("dragover", event => {
     if (draggedColorIndex === null) return;
-    if (event.target.closest(".palette-builder-color-row")) event.preventDefault();
+    const targetRow = event.target.closest(".palette-builder-color-row");
+    if (!targetRow || Number(targetRow.dataset.index) === draggedColorIndex) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    list.querySelectorAll(".swap-row--drop-target").forEach(row => row.classList.remove("swap-row--drop-target"));
+    targetRow.classList.add("swap-row--drop-target");
   });
 
   list.addEventListener("drop", event => {
@@ -355,7 +362,10 @@ function initPaletteBuilder() {
     render();
   });
 
-  list.addEventListener("dragend", () => { draggedColorIndex = null; });
+  list.addEventListener("dragend", () => {
+    draggedColorIndex = null;
+    list.querySelectorAll(".swap-row--dragging, .swap-row--drop-target").forEach(row => row.classList.remove("swap-row--dragging", "swap-row--drop-target"));
+  });
 
   paletteText.addEventListener("change", () => {
     try {
