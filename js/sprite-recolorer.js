@@ -531,6 +531,7 @@ function initSpriteRecolorer() {
       applySpriteZoom();
     });
   });
+
   window.addEventListener("resize", () => {
     if (spriteZoom === "fit") applySpriteZoom();
   });
