@@ -217,19 +217,10 @@ function initSpriteRecolorer() {
       return;
     }
 
-    let scale = spriteZoom;
-    if (spriteZoom === "fit") {
-      const boxes = [originalCanvas.parentElement, previewCanvas.parentElement];
-      const availableWidth = Math.min(...boxes.map(box => Math.max(1, box.clientWidth - 24)));
-      const availableHeight = Math.min(...boxes.map(box => Math.max(1, box.clientHeight - 24)));
-      const maximumScale = Math.min(availableWidth / originalImageData.width, availableHeight / originalImageData.height);
-      scale = Math.max(1, Math.min(8, Math.floor(maximumScale)));
-    }
-
-    originalCanvas.style.width = `${originalImageData.width * scale}px`;
-    originalCanvas.style.height = `${originalImageData.height * scale}px`;
-    previewCanvas.style.width = `${originalImageData.width * scale}px`;
-    previewCanvas.style.height = `${originalImageData.height * scale}px`;
+    originalCanvas.style.width = `${originalImageData.width * spriteZoom}px`;
+    originalCanvas.style.height = `${originalImageData.height * spriteZoom}px`;
+    previewCanvas.style.width = `${originalImageData.width * spriteZoom}px`;
+    previewCanvas.style.height = `${originalImageData.height * spriteZoom}px`;
   }
 
   function recolorSprite() {
@@ -536,14 +527,10 @@ function initSpriteRecolorer() {
 
   zoomButtons.forEach(button => {
     button.addEventListener("click", () => {
-      spriteZoom = button.dataset.zoom === "fit" ? "fit" : Number(button.dataset.zoom);
+      spriteZoom = Number(button.dataset.zoom);
       zoomButtons.forEach(btn => btn.classList.toggle("active", btn === button));
       applySpriteZoom();
     });
-  });
-
-  window.addEventListener("resize", () => {
-    if (spriteZoom === "fit") applySpriteZoom();
   });
 
   resetSwapColorsBtn.addEventListener("click", () => {
