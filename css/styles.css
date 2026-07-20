@@ -526,7 +526,7 @@ button:disabled { cursor: not-allowed; opacity: 0.38; filter: none; transform: n
 .preview-actions { display: inline-flex; align-items: center; gap: 8px; min-height: 30px; }
 .canvas-caption label { margin-bottom: 0; }
 .zoom-controls { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; margin: 0; }
-.zoom-btn { height: 34px; min-width: 44px; padding: 0 11px; background: rgba(255,255,255,0.035); color: var(--text); border: 1px solid rgba(255,255,255,0.06); box-shadow: none; font-size: 0.8rem; font-weight: 900; line-height: 1; }
+.zoom-btn { width: 34px; height: 34px; min-width: 34px; padding: 0; border-radius: 999px; background: rgba(255,255,255,0.035); color: var(--text); border: 1px solid rgba(255,255,255,0.06); box-shadow: none; font-size: 0.75rem; font-weight: 900; line-height: 1; }
 .zoom-btn.active { background: var(--accent); color: var(--accent-text); border-color: transparent; }
 .empty-state { display: grid; place-items: center; min-height: 82px; color: var(--muted-2); border: 1px dashed var(--border); border-radius: 18px; background: rgba(255, 255, 255, 0.025); text-align: center; padding: 18px; }
 
